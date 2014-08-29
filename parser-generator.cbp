@@ -34,6 +34,8 @@
 			<Add option="-fexceptions" />
 		</Compiler>
 		<Unit filename="dump.h" />
+		<Unit filename="file_writer.cpp" />
+		<Unit filename="file_writer.h" />
 		<Unit filename="generate.cpp" />
 		<Unit filename="generate.h" />
 		<Unit filename="item.h" />

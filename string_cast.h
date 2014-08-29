@@ -93,7 +93,6 @@ inline string string_cast<string>(wstring wstr)
         }
     }
     return retval;
-#warning finish implementing new code for string_cast<wstring>(string)
 #else
     size_t destLen = wstr.length() * 4 + 1 + 32/*for extra buffer space*/;
     char *str = new char[destLen];
@@ -120,6 +119,75 @@ inline string string_cast<string>(wstring wstr)
 template <>
 inline wstring string_cast<wstring>(string str)
 {
+#if 1
+    wstring retval;
+    for(size_t i = 0; i < str.size(); i++)
+    {
+        unsigned value = static_cast<unsigned char>(str[i]);
+        if((value & 0xF0) == 0xF0) // 4 or more byte
+        {
+            value &= 0x7;
+            if(i + 1 < str.size() && (static_cast<unsigned char>(str[i + 1]) & 0xC0) == 0x80)
+            {
+                i++;
+                value <<= 6;
+                value |= 0x3F & static_cast<unsigned char>(str[i]);
+                if(i + 1 < str.size() && (static_cast<unsigned char>(str[i + 1]) & 0xC0) == 0x80)
+                {
+                    i++;
+                    value <<= 6;
+                    value |= 0x3F & static_cast<unsigned char>(str[i]);
+                    if(i + 1 < str.size() && (static_cast<unsigned char>(str[i + 1]) & 0xC0) == 0x80)
+                    {
+                        i++;
+                        value <<= 6;
+                        value |= 0x3F & static_cast<unsigned char>(str[i]);
+                    }
+                }
+            }
+        }
+        else if((value & 0xF0) == 0xE0) // 3 byte
+        {
+            value &= 0xF;
+            if(i + 1 < str.size() && (static_cast<unsigned char>(str[i + 1]) & 0xC0) == 0x80)
+            {
+                i++;
+                value <<= 6;
+                value |= 0x3F & static_cast<unsigned char>(str[i]);
+                if(i + 1 < str.size() && (static_cast<unsigned char>(str[i + 1]) & 0xC0) == 0x80)
+                {
+                    i++;
+                    value <<= 6;
+                    value |= 0x3F & static_cast<unsigned char>(str[i]);
+                }
+            }
+        }
+        else if((value & 0xE0) == 0xC0) // 2 byte
+        {
+            value &= 0x1F;
+            if(i + 1 < str.size() && (static_cast<unsigned char>(str[i + 1]) & 0xC0) == 0x80)
+            {
+                i++;
+                value <<= 6;
+                value |= 0x3F & static_cast<unsigned char>(str[i]);
+            }
+        }
+#if WCHAR_BITS == 16
+        if(value >= 0x10000U)
+        {
+            value -= 0x10000U;
+            value &= 0xFFFFFU;
+            retval += static_cast<wchar_t>((value >> 10) + 0xD800U);
+            retval += static_cast<wchar_t>((value & 0x3FF) + 0xDC00U);
+        }
+        else
+#endif
+        {
+            retval += static_cast<wchar_t>(value);
+        }
+    }
+    return retval;
+#else
     size_t destLen = str.length() + 1 + 32/* for extra buffer space*/;
     wchar_t *wstr = new wchar_t[destLen];
     for(size_t i = 0; i < destLen; i++)
@@ -139,6 +207,7 @@ inline wstring string_cast<wstring>(string str)
     wstring retval = wstr;
     delete []wstr;
     return retval;
+#endif
 }
 
 #endif // STRING_CAST_H_INCLUDED

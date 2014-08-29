@@ -9,6 +9,8 @@
 #include <iterator>
 #include <tuple>
 #include <cassert>
+#include <functional>
+#include <cwctype>
 
 using namespace std;
 
@@ -20,6 +22,76 @@ struct Rule final
     Rule(shared_ptr<NonterminalSymbol> lhs, SymbolList rhs, wstring code = L"")
         : lhs(lhs), rhs(rhs), code(code)
     {
+    }
+    wstring substituteCode(function<wstring(int)> getArgString, wstring destString) const
+    {
+        wint_t stringLiteralDelimiter = WEOF;
+        bool gotEscape = false;
+        int index = 0;
+        bool gotArgString = false, gettingArgString = false;
+        wstring retval;
+        for(wchar_t ch : code)
+        {
+            if(stringLiteralDelimiter != WEOF)
+            {
+                if(gotEscape)
+                {
+                    gotEscape = false;
+                }
+                else if(ch == '\\')
+                {
+                    gotEscape = true;
+                }
+                else if((wint_t)ch == stringLiteralDelimiter)
+                {
+                    stringLiteralDelimiter = WEOF;
+                }
+            }
+            else if(ch == '$')
+            {
+                if(!gotArgString && gettingArgString)
+                {
+                    gettingArgString = false;
+                    retval += destString;
+                    continue;
+                }
+                else if(gotArgString && gettingArgString)
+                {
+                    retval += getArgString(index);
+                    index = 0;
+                    gotArgString = false;
+                    continue;
+                }
+                else
+                {
+                    index = 0;
+                    gotArgString = false;
+                    gettingArgString = true;
+                    continue;
+                }
+            }
+            else if(iswdigit(ch) && gettingArgString)
+            {
+                gotArgString = true;
+                index *= 10;
+                index += ch - '0';
+                continue;
+            }
+            else if(gotArgString)
+            {
+                retval += getArgString(index);
+                index = 0;
+                gotArgString = false;
+                gettingArgString = false;
+            }
+            else if(gettingArgString)
+            {
+                retval += '$';
+                gettingArgString = false;
+            }
+            retval += ch;
+        }
+        return retval;
     }
 };
 

@@ -13,6 +13,17 @@ struct FormattingOptions
 {
     bool useEscapeSequences = true;
     bool useExtendedCharacters = true;
+    enum CodeFormatType
+    {
+        Code
+    };
+    FormattingOptions()
+    {
+    }
+    explicit FormattingOptions(CodeFormatType)
+        : useEscapeSequences(false), useExtendedCharacters(false)
+    {
+    }
 };
 
 inline wstring dumpSymbol(shared_ptr<Symbol> symbol, FormattingOptions formatting)
