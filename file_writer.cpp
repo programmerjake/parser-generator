@@ -3,13 +3,18 @@
 #include <sstream>
 #include <tuple>
 #include <cwctype>
+#include <fstream>
 #include "string_cast.h"
 
 using namespace std;
 
+namespace
+{
 class CPlusPlusFileWriter : public FileWriter
 {
-    string valueTypeName, parseClassName, nullString;
+    shared_ptr<ostream> stream2;
+    ostream &os2;
+    string valueTypeName, parseClassName, nullString, headerFileName;
     size_t indentAmount = 4;
     string indent(size_t amount)
     {
@@ -36,6 +41,19 @@ class CPlusPlusFileWriter : public FileWriter
                 ss << L"_";
         }
         ss << L"_" << ruleNumbers[rule];
+        return ss.str();
+    }
+    string getHeaderGuardName()
+    {
+        ostringstream ss;
+        ss << "PARSER_";
+        for(char ch : headerFileName)
+        {
+            if(isalnum(ch))
+                ss << (char)toupper(ch);
+            else
+                ss << '_';
+        }
         return ss.str();
     }
     void writeParseFunctions()
@@ -90,52 +108,56 @@ class CPlusPlusFileWriter : public FileWriter
     void onGotSymbols()
     {
         os << "// This is a automatically generated file : DO NOT MODIFY\n";
-        os << prologue << "\n";
-        os << "#include <vector>\n";
-        os << "#include <string>\n";
-        os << "#include <stdexcept>\n";
-        os << "#include <cstdio> // for EOF\n";
-        os << "\n";
-        os << "class " << parseClassName << "\n";
-        os << "{\n";
-        os << "public:\n";
-        os << indent(1) << "struct ParseError : public std::runtime_error\n";
-        os << indent(1) << "{\n";
-        os << indent(2) << "explicit ParseError(const std::string &msg)\n";
-        os << indent(3) << ": runtime_error(msg)\n";
-        os << indent(2) << "{\n";
-        os << indent(2) << "}\n";
-        os << indent(1) << "};\n";
-        os << "private:\n";
-        os << indent(1) << "struct ElementType\n";
-        os << indent(1) << "{\n";
-        os << indent(2) << "size_t state;\n";
-        os << indent(2) << valueTypeName << " value;\n";
-        os << indent(2) << "ElementType(size_t state, " << valueTypeName << " value)\n";
-        os << indent(3) << ": state(state), value(value)\n";
-        os << indent(2) << "{\n";
-        os << indent(2) << "}\n";
-        os << indent(1) << "};\n";
-        os << indent(1) << "std::vector<ElementType> theStack;\n";
-        os << indent(1) << "static const size_t ErrorState = ~(size_t)0;\n";
-        os << indent(1) << (useEnumClass ? "enum class " : "enum ") << " ActionType\n";
-        os << indent(1) << "{\n";
-        os << indent(2) << "Shift,\n";
-        os << indent(2) << "Reduce,\n";
-        os << indent(2) << "Accept,\n";
-        os << indent(2) << "Error\n";
-        os << indent(1) << "};\n";
-        os << indent(1) << "struct ActionEntry\n";
-        os << indent(1) << "{\n";
-        os << indent(2) << "ActionType type;\n";
-        os << indent(2) << "size_t nextState;\n";
-        os << indent(2) << valueTypeName << " (" << parseClassName << "::*reduceFn)();\n";
-        os << indent(2) << "size_t popCount;\n";
-        os << indent(1) << "};\n";
+        os << "#include \"" << headerFileName << "\"\n";
+        os2 << "// This is a automatically generated file : DO NOT MODIFY\n";
+        os2 << "#ifndef " << getHeaderGuardName() << "\n";
+        os2 << "#define " << getHeaderGuardName() << "\n";
+        os2 << prologue << "\n";
+        os2 << "#include <vector>\n";
+        os2 << "#include <string>\n";
+        os2 << "#include <stdexcept>\n";
+        os2 << "#include <cstdio> // for EOF\n";
+        os2 << "\n";
+        os2 << "class " << parseClassName << "\n";
+        os2 << "{\n";
+        os2 << "public:\n";
+        os2 << indent(1) << "struct ParseError : public std::runtime_error\n";
+        os2 << indent(1) << "{\n";
+        os2 << indent(2) << "explicit ParseError(const std::string &msg)\n";
+        os2 << indent(3) << ": runtime_error(msg)\n";
+        os2 << indent(2) << "{\n";
+        os2 << indent(2) << "}\n";
+        os2 << indent(1) << "};\n";
+        os2 << "private:\n";
+        os2 << indent(1) << "struct ElementType\n";
+        os2 << indent(1) << "{\n";
+        os2 << indent(2) << "size_t state;\n";
+        os2 << indent(2) << valueTypeName << " value;\n";
+        os2 << indent(2) << "ElementType(size_t state, " << valueTypeName << " value)\n";
+        os2 << indent(3) << ": state(state), value(value)\n";
+        os2 << indent(2) << "{\n";
+        os2 << indent(2) << "}\n";
+        os2 << indent(1) << "};\n";
+        os2 << indent(1) << "std::vector<ElementType> theStack;\n";
+        os2 << indent(1) << "static const size_t ErrorState = ~(size_t)0;\n";
+        os2 << indent(1) << (useEnumClass ? "enum class " : "enum ") << " ActionType\n";
+        os2 << indent(1) << "{\n";
+        os2 << indent(2) << "Shift,\n";
+        os2 << indent(2) << "Reduce,\n";
+        os2 << indent(2) << "Accept,\n";
+        os2 << indent(2) << "Error\n";
+        os2 << indent(1) << "};\n";
+        os2 << indent(1) << "struct ActionEntry\n";
+        os2 << indent(1) << "{\n";
+        os2 << indent(2) << "ActionType type;\n";
+        os2 << indent(2) << "size_t nextState;\n";
+        os2 << indent(2) << valueTypeName << " (" << parseClassName << "::*reduceFn)();\n";
+        os2 << indent(2) << "size_t popCount;\n";
+        os2 << indent(1) << "};\n";
     }
 public:
-    CPlusPlusFileWriter(shared_ptr<ostream> stream)
-        : FileWriter(stream), valueTypeName("ValueType"), parseClassName("MyParser"), nullString("NULL")
+    CPlusPlusFileWriter(shared_ptr<ostream> stream, shared_ptr<ostream> stream2, string headerFileName)
+        : FileWriter(stream), stream2(stream2), os2(*stream2), valueTypeName("ValueType"), parseClassName("MyParser"), nullString("NULL"), headerFileName(headerFileName)
     {
     }
     virtual ~CPlusPlusFileWriter()
@@ -180,25 +202,26 @@ public:
     virtual void startActionTable(size_t stateCount) override
     {
         this->stateCount = stateCount;
-        os << indent(1) << "static const ActionEntry actionTable[" << stateCount << "][" << terminals.size() << "];\n";
-        os << indent(1) << "static const size_t gotoTable[" << stateCount << "][" << nonterminals.size() << "];\n";
-        os << indent(1) << "static const " << valueTypeName << " terminalsTable[" << terminals.size() << "];\n";
+        os2 << indent(1) << "static const ActionEntry actionTable[" << stateCount << "][" << terminals.size() << "];\n";
+        os2 << indent(1) << "static const size_t gotoTable[" << stateCount << "][" << nonterminals.size() << "];\n";
+        os2 << indent(1) << "static const " << valueTypeName << " terminalsTable[" << terminals.size() << "];\n";
         for(shared_ptr<Rule> rule : rules)
         {
-            os << indent(1) << valueTypeName << " " << string_cast<string>(getRuleName(rule)) << "();\n";
+            os2 << indent(1) << valueTypeName << " " << string_cast<string>(getRuleName(rule)) << "();\n";
         }
-        os << "public:\n";
-        os << indent(1) << "virtual ~" << parseClassName << "()\n";
-        os << indent(1) << "{\n";
-        os << indent(1) << "}\n";
-        os << indent(1) << "virtual " << valueTypeName << " getToken() = 0;\n";
-        os << indent(1) << "virtual void handleError(const std::string &msg)\n";
-        os << indent(1) << "{\n";
-        os << indent(2) << "throw ParseError(msg);\n";
-        os << indent(1) << "}\n";
-        os << indent(1) << valueTypeName << " parse();\n";
-        os << indent(1) << "size_t translateToken(const " << valueTypeName << " &tok);\n";
-        os << "};\n";
+        os2 << "public:\n";
+        os2 << indent(1) << "virtual ~" << parseClassName << "()\n";
+        os2 << indent(1) << "{\n";
+        os2 << indent(1) << "}\n";
+        os2 << indent(1) << "virtual " << valueTypeName << " getToken() = 0;\n";
+        os2 << indent(1) << "virtual void handleError(const std::string &msg)\n";
+        os2 << indent(1) << "{\n";
+        os2 << indent(2) << "throw ParseError(msg);\n";
+        os2 << indent(1) << "}\n";
+        os2 << indent(1) << valueTypeName << " parse();\n";
+        os2 << indent(1) << "size_t translateToken(const " << valueTypeName << " &tok);\n";
+        os2 << "};\n";
+        os2 << "#endif\n";
         for(shared_ptr<Rule> rule : rules)
         {
             os << valueTypeName << " " << parseClassName << "::" << string_cast<string>(getRuleName(rule)) << "()\n";
@@ -287,9 +310,77 @@ public:
     }
 };
 
-FileWriter *makeFileWriter(wstring language, shared_ptr<ostream> os)
+vector<string> decomposePath(string path)
+{
+    vector<string> retval;
+    bool haveAnything = true;
+    retval.push_back("");
+    for(char ch : path)
+    {
+        if(ch == '/' || ch == '\\')
+        {
+            haveAnything = false;
+        }
+        else
+        {
+            if(!haveAnything)
+            {
+                retval.push_back("");
+            }
+            retval.back() += ch;
+            haveAnything = true;
+        }
+    }
+    return retval;
+}
+
+string getRelativeName(string startFile, string destFile)
+{
+    vector<string> startPath = decomposePath(startFile);
+    vector<string> destPath = decomposePath(destFile);
+    if(startPath.front() == ".")
+        startPath.erase(startPath.begin(), startPath.begin() + 1);
+    if(destPath.front() == ".")
+        destPath.erase(destPath.begin(), destPath.begin() + 1);
+    for(size_t i = 1; i < startPath.size(); i++)
+    {
+        while(i < startPath.size() && i >= 1 && startPath[i] == ".." && startPath[i - 1] != "." && startPath[i - 1] != "..")
+        {
+            startPath.erase(startPath.begin() + i - 1, startPath.begin() + i + 1);
+            i--;
+        }
+    }
+    for(size_t i = 1; i < destPath.size(); i++)
+    {
+        while(i < destPath.size() && i >= 1 && destPath[i] == ".." && destPath[i - 1] != "." && destPath[i - 1] != "..")
+        {
+            destPath.erase(destPath.begin() + i - 1, destPath.begin() + i + 1);
+            i--;
+        }
+    }
+    while(startPath.size() > 1 && destPath.size() > 1 && startPath.front() == destPath.front())
+    {
+        startPath.erase(startPath.begin(), startPath.begin() + 1);
+        destPath.erase(destPath.begin(), destPath.begin() + 1);
+    }
+    string retval = "", seperator = "";
+    for(string s : destPath)
+    {
+        retval += seperator;
+        retval += s;
+        seperator = "/";
+    }
+    for(size_t i = 1; i < startPath.size(); i++)
+    {
+        retval = "../" + retval;
+    }
+    return retval;
+}
+}
+
+FileWriter *makeFileWriter(wstring language, string fileName, string headerName)
 {
     if(language == CPlusPlusFileWriter::language)
-        return new CPlusPlusFileWriter(os);
+        return new CPlusPlusFileWriter(make_shared<ofstream>(fileName), make_shared<ofstream>(headerName), getRelativeName(fileName, headerName));
     throw runtime_error("unknown output language");
 }

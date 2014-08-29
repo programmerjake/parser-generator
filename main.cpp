@@ -318,7 +318,7 @@ int main()
     if(anyConflicts)
         return 1;
     shared_ptr<ostream> pcout = shared_ptr<ostream>(&cout, [](ostream *){});
-    FileWriter *writer = makeFileWriter(L"C++", make_shared<ofstream>("out.txt"));
+    FileWriter *writer = makeFileWriter(L"C++", "obj/out.cpp", "obj/out.h");
     writer->writePrologue(L"#include <iostream>\n\nusing std::cout;\ntypedef int ValueType;\n");
     writer->setTerminalList(terminalSymbols);
     writer->setNonterminalList(nonterminalSymbols);
@@ -351,6 +351,6 @@ int main()
     writer->endGotoTable();
     writer->writeEpilogue(L"struct ParserImp : public MyParser\n{\n    virtual ValueType getToken()\n    {\n        return std::cin.get();\n    }\n};\nint main()\n{\n    ParserImp parser;\n    try\n    {\n        parser.parse();\n    }\n    catch(std::exception &e)\n    {\n        std::cerr << \"error : \" << e.what() << std::endl;\n    }\n}");
     delete writer;
-    system("g++ -x c++ out.txt -o obj/out-test");
+    system("g++ -x c++ obj/out.cpp -o obj/out-test");
     return 0;
 }

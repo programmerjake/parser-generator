@@ -46,6 +46,6 @@ public:
     virtual void writeShiftAction(size_t newState, size_t lookahead) = 0;
 };
 
-FileWriter *makeFileWriter(wstring language, shared_ptr<ostream> os);
+FileWriter *makeFileWriter(wstring language, string fileName, string headerName);
 
 #endif // FILE_WRITER_H_INCLUDED
