@@ -342,6 +342,8 @@ class Tokenizer
             next();
             for(size_t i = 0; i < digitCount; i++)
             {
+                if(!iswxdigit(peek()))
+                    throw ParseError(location, L"missing hexadecimal digit in escape sequence");
                 value *= 0x10;
                 if(iswdigit(peek()))
                     value += peek() - '0';
@@ -351,8 +353,6 @@ class Tokenizer
                     value += peek() - 'A' + 0xA;
                 if(value > 0x10FFFF)
                     throw ParseError(location, L"unicode literal out of range");
-                if(!iswxdigit(peek()))
-                    throw ParseError(location, L"missing hexadecimal digit in escape sequence");
                 next();
             }
             wchar_t ch = value;

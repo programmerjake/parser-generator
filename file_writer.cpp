@@ -209,17 +209,18 @@ public:
         {
             os2 << indent(1) << valueTypeName << " " << string_cast<string>(getRuleName(rule)) << "();\n";
         }
+        os2 << indent(1) << "size_t translateToken(const " << valueTypeName << " &tok);\n";
         os2 << "public:\n";
         os2 << indent(1) << "virtual ~" << parseClassName << "()\n";
         os2 << indent(1) << "{\n";
         os2 << indent(1) << "}\n";
+        os2 << indent(1) << valueTypeName << " parse();\n";
+        os2 << "protected:\n";
         os2 << indent(1) << "virtual " << valueTypeName << " getToken() = 0;\n";
         os2 << indent(1) << "virtual void handleError(const std::string &msg)\n";
         os2 << indent(1) << "{\n";
         os2 << indent(2) << "throw ParseError(msg);\n";
         os2 << indent(1) << "}\n";
-        os2 << indent(1) << valueTypeName << " parse();\n";
-        os2 << indent(1) << "size_t translateToken(const " << valueTypeName << " &tok);\n";
         os2 << "};\n";
         os2 << "#endif\n";
         for(shared_ptr<Rule> rule : rules)
