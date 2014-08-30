@@ -1,0 +1,39 @@
+%{
+#include <iostream>
+
+using namespace std;
+
+typedef int ValueType;
+%}
+
+%token EOF
+%%
+
+start: "testing.\n" {cout << "got testing.\n";};
+
+%%
+%{
+struct ParserImp : public MyParser
+{
+    virtual ValueType getToken()
+    {
+        return cin.get();
+    }
+};
+
+int main()
+{
+    ParserImp parser;
+    try
+    {
+        parser.parse();
+    }
+    catch(exception &e)
+    {
+        cerr << "Error : " << e.what() << endl;
+        return 1;
+    }
+    return 0;
+}
+
+%}

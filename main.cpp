@@ -8,6 +8,8 @@
 #include <sstream>
 #include <fstream>
 #include <cstdlib>
+#include <cwctype>
+#include <stdexcept>
 #include "symbol.h"
 #include "rule.h"
 #include "item.h"
@@ -17,6 +19,633 @@
 #include "file_writer.h"
 
 using namespace std;
+
+enum class TokenType
+{
+    EndOfFile,
+    EndOfLine,
+    CodeSection,
+    Colon,
+    Pipe,
+    Semicolon,
+    Identifier,
+    DoublePercent,
+    PercentIdentifier,
+    Character,
+    String,
+};
+
+struct Location
+{
+    size_t line, column;
+    Location(size_t line, size_t column)
+        : line(line), column(column)
+    {
+    }
+    Location()
+        : line(1), column(1)
+    {
+    }
+    explicit operator wstring() const
+    {
+        wostringstream ss;
+        ss << L"Line " << line << ", Column " << column;
+        return ss.str();
+    }
+};
+
+struct Token
+{
+    TokenType type;
+    wstring value;
+    Location location;
+    Token(Location location = Location(), TokenType type = TokenType::EndOfFile, wstring value = L"")
+        : type(type), value(value)
+    {
+    }
+    static wstring getCharacterLiteral(unsigned value)
+    {
+        wostringstream ss;
+        if(value >= 0x10000)
+        {
+            ss << L"\\U";
+            ss.fill(L'0');
+            ss.width(8);
+            ss << hex << value;
+        }
+        else if(value >= 0x80)
+        {
+            ss << L"\\u";
+            ss.fill(L'0');
+            ss.width(4);
+            ss << hex << value;
+        }
+        else if(value == 0x7F)
+        {
+            ss << L"\\x7F";
+        }
+        else if(value < 0x20)
+        {
+            switch(value)
+            {
+            case '\a':
+                ss << L"\\a";
+                break;
+            case '\b':
+                ss << L"\\b";
+                break;
+            case '\f':
+                ss << L"\\f";
+                break;
+            case '\n':
+                ss << L"\\n";
+                break;
+            case '\r':
+                ss << L"\\r";
+                break;
+            case '\t':
+                ss << L"\\t";
+                break;
+            case '\v':
+                ss << L"\\v";
+                break;
+            default:
+                ss << L"\\x";
+                ss.fill(L'0');
+                ss.width(2);
+                ss << hex << value;
+                break;
+            }
+        }
+        else
+        {
+            switch(value)
+            {
+            case '\"':
+            case '\'':
+            case '\\':
+                ss << L"\\" << (wchar_t)value;
+                break;
+            default:
+                ss << (wchar_t)value;
+            }
+        }
+        return ss.str();
+    }
+    wstring makeCharacterLiteral() const
+    {
+        wstring retval = L"\'";
+        for(size_t i = 0; i < value.size(); i++)
+        {
+            unsigned value = this->value[i];
+            if(value >= 0xD800U && value <= 0xDBFFU && i + 1 < this->value.size())
+            {
+                unsigned nextValue = this->value[i + 1];
+                if(nextValue >= 0xDC00U && nextValue <= 0xDFFFU)
+                {
+                    i++;
+                    value -= 0xD800U;
+                    nextValue -= 0xDC00U;
+                    value <<= 10;
+                    value += nextValue;
+                }
+            }
+            retval += getCharacterLiteral(value);
+        }
+        retval += L"\'";
+        return retval;
+    }
+    wstring makeStringLiteral() const
+    {
+        wstring retval = L"\"";
+        for(size_t i = 0; i < value.size(); i++)
+        {
+            unsigned value = this->value[i];
+            if(value >= 0xD800U && value <= 0xDBFFU && i + 1 < this->value.size())
+            {
+                unsigned nextValue = this->value[i + 1];
+                if(nextValue >= 0xDC00U && nextValue <= 0xDFFFU)
+                {
+                    i++;
+                    value -= 0xD800U;
+                    nextValue -= 0xDC00U;
+                    value <<= 10;
+                    value += nextValue;
+                }
+            }
+            retval += getCharacterLiteral(value);
+        }
+        retval += L"\"";
+        return retval;
+    }
+    vector<wstring> makeCharacterLiterals() const
+    {
+        vector<wstring> retval;
+        for(size_t i = 0; i < value.size(); i++)
+        {
+            unsigned value = this->value[i];
+            if(value >= 0xD800U && value <= 0xDBFFU && i + 1 < this->value.size())
+            {
+                unsigned nextValue = this->value[i + 1];
+                if(nextValue >= 0xDC00U && nextValue <= 0xDFFFU)
+                {
+                    i++;
+                    value -= 0xD800U;
+                    nextValue -= 0xDC00U;
+                    value <<= 10;
+                    value += nextValue;
+                }
+            }
+            retval.push_back(L"\'" + getCharacterLiteral(value) + L"\'");
+        }
+        return std::move(retval);
+    }
+};
+
+string loadAll(istream &is)
+{
+    string retval;
+    constexpr size_t readChunkSize = 4096;
+    char buffer[readChunkSize];
+    while(is.read(buffer, readChunkSize))
+    {
+        retval.append(buffer, readChunkSize);
+    }
+    retval.append(buffer, is.gcount());
+    return std::move(retval);
+}
+
+struct ParseError : public runtime_error
+{
+    Location location;
+    wstring msg;
+    explicit ParseError(wstring msg)
+        : runtime_error(string_cast<string>(msg)), msg(msg)
+    {
+    }
+    ParseError(Location location, wstring msg)
+        : ParseError(static_cast<wstring>(location) + L" : " + msg)
+    {
+        this->location = location;
+    }
+};
+
+class Tokenizer
+{
+    const wstring input;
+    size_t inputPosition = 0;
+    Location location;
+    wint_t peek() const
+    {
+        if(inputPosition >= input.size())
+            return WEOF;
+        wchar_t ch = input[inputPosition];
+        if(ch == '\r')
+            ch = '\n';
+        return ch;
+    }
+    void next()
+    {
+        if(inputPosition < input.size())
+        {
+            wchar_t ch = input[inputPosition++];
+            if(ch == '\r')
+            {
+                location.line++;
+                location.column = 1;
+                if(inputPosition < input.size() && input[inputPosition] == '\n')
+                    inputPosition++;
+            }
+            else if(ch == '\n')
+            {
+                location.line++;
+                location.column = 1;
+            }
+            else if(ch == '\t')
+            {
+                constexpr size_t tabWidth = 4;
+                size_t x = location.column;
+                x--;
+                x -= x % tabWidth;
+                x += tabWidth;
+                x++;
+                location.column = x;
+            }
+            else
+                location.column++;
+        }
+    }
+    void skipWhiteSpace()
+    {
+        while(iswblank(peek()))
+        {
+            next();
+        }
+    }
+    void readStringEscape()
+    {
+        assert(peek() == '\\');
+        next();
+        switch(peek())
+        {
+        case WEOF:
+        case '\n':
+            throw ParseError(location, L"missing rest of escape sequence");
+        case '\'':
+        case '\\':
+        case '\"':
+            token.value += peek();
+            next();
+            break;
+        case 'a':
+            token.value += L'\a';
+            next();
+            break;
+        case 'b':
+            token.value += L'\b';
+            next();
+            break;
+        case 'f':
+            token.value += L'\f';
+            next();
+            break;
+        case 'n':
+            token.value += L'\n';
+            next();
+            break;
+        case 'r':
+            token.value += L'\r';
+            next();
+            break;
+        case 't':
+            token.value += L'\t';
+            next();
+            break;
+        case 'v':
+            token.value += L'\v';
+            next();
+            break;
+        case '0':
+            token.value += L'\0';
+            next();
+            break;
+        case 'x':
+        case 'u':
+        case 'U':
+        {
+            unsigned value = 0;
+            size_t digitCount = 2;
+            if(peek() == 'u')
+                digitCount = 4;
+            else if(peek() == 'U')
+                digitCount = 8;
+            next();
+            for(size_t i = 0; i < digitCount; i++)
+            {
+                value *= 0x10;
+                if(iswdigit(peek()))
+                    value += peek() - '0';
+                else if(iswlower(peek()))
+                    value += peek() - 'a' + 0xA;
+                else
+                    value += peek() - 'A' + 0xA;
+                if(value > 0x10FFFF)
+                    throw ParseError(location, L"unicode literal out of range");
+                if(!iswxdigit(peek()))
+                    throw ParseError(location, L"missing hexadecimal digit in escape sequence");
+                next();
+            }
+            wchar_t ch = value;
+            if((unsigned)ch != value)
+            {
+                value -= 0x10000;
+                token.value += (wchar_t)((value >> 10) + 0xD800);
+                token.value += (wchar_t)((value & 0x3FF) + 0xDC00);
+            }
+            else
+                token.value += ch;
+            if(token.value.size() >= 2)
+            {
+                unsigned ch1, ch2;
+                ch1 = token.value[token.value.size() - 2];
+                ch2 = token.value[token.value.size() - 1];
+                if(ch1 >= 0xD800U && ch1 < 0xDC00U && ch2 >= 0xDC00U && ch2 < 0xE000U)
+                {
+                    ch1 &= 0x3FFU;
+                    ch2 &= 0x3FFU;
+                    ch = (ch1 << 10) + ch2;
+                    if((unsigned)ch == (ch1 << 10) + ch2)
+                    {
+                        token.value.erase(token.value.size() - 2);
+                        token.value += ch;
+                    }
+                }
+            }
+            break;
+        }
+        default:
+            throw ParseError(location, L"invalid escape sequence");
+        }
+    }
+public:
+    Tokenizer(wstring input)
+        : input(std::move(input))
+    {
+        nextToken();
+    }
+    Tokenizer(istream &is)
+        : input(string_cast<wstring>(loadAll(is)))
+    {
+        nextToken();
+    }
+    Token token;
+    void nextToken()
+    {
+        for(;;)
+        {
+            skipWhiteSpace();
+            token = Token(location);
+            if(peek() == WEOF)
+            {
+                token.type = TokenType::EndOfFile;
+                return;
+            }
+            if(peek() == '\n')
+            {
+                token.type = TokenType::EndOfLine;
+                next();
+                return;
+            }
+            if(iswalpha(peek()) || peek() == '_')
+            {
+                token.type = TokenType::Identifier;
+                while(iswalnum(peek()) || peek() == '_')
+                {
+                    token.value += peek();
+                    next();
+                }
+                return;
+            }
+            if(peek() == '\'')
+            {
+                token.type = TokenType::Character;
+                next();
+                if(peek() == '\\')
+                    readStringEscape();
+                else if(peek() == '\'')
+                    throw ParseError(location, L"empty character literal not allowed");
+                else if(peek() == WEOF || peek() == '\n')
+                    throw ParseError(location, L"missing closing single quote");
+                else
+                {
+                    token.value += peek();
+                    next();
+                }
+                if(peek() != '\'')
+                    throw ParseError(location, L"expected closing single quote");
+                next();
+                return;
+            }
+            if(peek() == '\"')
+            {
+                token.type = TokenType::String;
+                next();
+                while(peek() != '\"' && peek() != WEOF && peek() != '\n')
+                {
+                    if(peek() == '\\')
+                        readStringEscape();
+                    else
+                    {
+                        token.value += peek();
+                        next();
+                    }
+                }
+                if(peek() != '\"')
+                    throw ParseError(location, L"expected closing double quote");
+                next();
+                return;
+            }
+            if(peek() == '%')
+            {
+                token.value += peek();
+                next();
+                if(iswalpha(peek()) || peek() == '_')
+                {
+                    token.type = TokenType::PercentIdentifier;
+                    while(iswalnum(peek()) || peek() == '_')
+                    {
+                        token.value += peek();
+                        next();
+                    }
+                    return;
+                }
+                else if(peek() == '%')
+                {
+                    token.type = TokenType::DoublePercent;
+                    token.value += peek();
+                    next();
+                    return;
+                }
+                else if(peek() == '{')
+                {
+                    token.type = TokenType::CodeSection;
+                    token.value = L"";
+                    next();
+                    while(peek() != WEOF)
+                    {
+                        if(peek() == '%')
+                        {
+                            next();
+                            while(peek() == '%')
+                            {
+                                token.value += L'%';
+                                next();
+                            }
+                            if(peek() == '}')
+                            {
+                                next();
+                                return;
+                            }
+                            else
+                            {
+                                token.value += L'%';
+                            }
+                        }
+                        else
+                        {
+                            token.value += peek();
+                            next();
+                        }
+                    }
+                    throw ParseError(location, L"expected closing %}");
+                }
+                else
+                    throw ParseError(location, L"unexpected %");
+            }
+            if(peek() == '{')
+            {
+                size_t braceNestLevel = 1;
+                wint_t quoteCharacter = WEOF;
+                token.value += peek();
+                token.type = TokenType::CodeSection;
+                next();
+                while(braceNestLevel > 0)
+                {
+                    if(peek() == WEOF)
+                    {
+                        if(quoteCharacter == '\'')
+                            throw ParseError(location, L"expected closing single quote");
+                        if(quoteCharacter == '\"')
+                            throw ParseError(location, L"expected closing double quote");
+                        throw ParseError(location, L"expected closing brace");
+                    }
+                    if(quoteCharacter != WEOF)
+                    {
+                        if(peek() == '\\')
+                        {
+                            token.value += peek();
+                            next();
+                            if(peek() == WEOF)
+                                throw ParseError(location, L"missing rest of escape sequence");
+                            token.value += peek();
+                            next();
+                        }
+                        else if(peek() == quoteCharacter)
+                        {
+                            token.value += peek();
+                            next();
+                            quoteCharacter = WEOF;
+                        }
+                        else
+                        {
+                            token.value += peek();
+                            next();
+                        }
+                    }
+                    else if(peek() == '\'' || peek() == '\"')
+                    {
+                        token.value += peek();
+                        quoteCharacter = peek();
+                        next();
+                    }
+                    else if(peek() == '{')
+                    {
+                        braceNestLevel++;
+                        token.value += peek();
+                        next();
+                    }
+                    else if(peek() == '}')
+                    {
+                        braceNestLevel--;
+                        token.value += peek();
+                        next();
+                    }
+                    else
+                    {
+                        token.value += peek();
+                        next();
+                    }
+                }
+                return;
+            }
+            if(peek() == ';')
+            {
+                token.value += peek();
+                token.type = TokenType::Semicolon;
+                next();
+                return;
+            }
+            if(peek() == ':')
+            {
+                token.value += peek();
+                token.type = TokenType::Colon;
+                next();
+                return;
+            }
+            if(peek() == '|')
+            {
+                token.value += peek();
+                token.type = TokenType::Pipe;
+                next();
+                return;
+            }
+            if(peek() == '/')
+            {
+                next();
+                if(peek() == '/')
+                {
+                    while(peek() != WEOF && peek() != '\n')
+                        next();
+                    continue;
+                }
+                else if(peek() == '*')
+                {
+                    next();
+                    while(peek() != WEOF)
+                    {
+                        if(peek() == '*')
+                        {
+                            while(peek() == '*')
+                                next();
+                            if(peek() == '/')
+                                break;
+                        }
+                        else
+                            next();
+                    }
+                    if(peek() != '/')
+                        throw ParseError(location, L"expected */");
+                    next();
+                    continue;
+                }
+                else
+                    throw ParseError(location, L"invalid character");
+            }
+            throw ParseError(location, L"invalid character");
+            break;
+        }
+    }
+};
 
 static constexpr size_t NoIndex = ~(size_t)0;
 
@@ -113,87 +742,234 @@ struct ItemSetProperties
     }
 };
 
+void parsePrologueSection(Tokenizer &tokenizer, wstring &prologueCode, SymbolSet &symbols, unordered_map<wstring, shared_ptr<Symbol>> &symbolsMap)
+{
+    wstring codeSeperator = L"";
+    bool nextAtBeginningOfLine = true;
+    for(;;)
+    {
+        Token &token = tokenizer.token;
+        bool atBeginningOfLine = nextAtBeginningOfLine;
+        nextAtBeginningOfLine = false;
+        switch(token.type)
+        {
+        case TokenType::EndOfFile:
+            throw ParseError(token.location, L"expected %%");
+        case TokenType::DoublePercent:
+            tokenizer.nextToken();
+            return;
+        case TokenType::CodeSection:
+            prologueCode += codeSeperator;
+            codeSeperator = L"\n\n";
+            prologueCode += token.value;
+            prologueCode += L"\n";
+            tokenizer.nextToken();
+            break;
+        case TokenType::EndOfLine:
+            nextAtBeginningOfLine = true;
+            tokenizer.nextToken();
+            break;
+        case TokenType::PercentIdentifier:
+            if(!atBeginningOfLine)
+                throw ParseError(token.location, L"unexpected token");
+            if(token.value == L"%token")
+            {
+                tokenizer.nextToken();
+                while(token.type == TokenType::Identifier)
+                {
+                    if(symbolsMap.count(token.value) > 0)
+                        throw ParseError(token.location, L"already declared as token");
+                    shared_ptr<Symbol> symbol = TerminalSymbol::make(token.value);
+                    symbolsMap[token.value] = symbol;
+                    symbols.insert(symbol);
+                    tokenizer.nextToken();
+                }
+                if(token.type != TokenType::EndOfLine && token.type != TokenType::EndOfFile)
+                    throw ParseError(token.location, L"unexpected token");
+            }
+            else
+                throw ParseError(token.location, L"unknown directive");
+            break;
+        default:
+            throw ParseError(token.location, L"unexpected token");
+        }
+    }
+}
+
+shared_ptr<Symbol> findOrMakeSymbol(wstring name, SymbolSet &symbols, unordered_map<wstring, shared_ptr<Symbol>> &symbolsMap)
+{
+    shared_ptr<Symbol> &retval = symbolsMap[name];
+    if(retval == nullptr)
+    {
+        retval = make_shared<NonterminalSymbol>(name);
+        symbols.insert(retval);
+    }
+    return retval;
+}
+
+void getNewLines(Tokenizer &tokenizer)
+{
+    while(tokenizer.token.type == TokenType::EndOfLine)
+        tokenizer.nextToken();
+}
+
+void parseRule(Tokenizer &tokenizer, RuleSet &rules, SymbolSet &symbols, unordered_map<wstring, shared_ptr<Symbol>> &symbolsMap, shared_ptr<NonterminalSymbol> &startSymbol)
+{
+    Token &token = tokenizer.token;
+    if(token.type != TokenType::Identifier)
+        throw ParseError(token.location, L"expected an identifier");
+    shared_ptr<Symbol> symbol = findOrMakeSymbol(token.value, symbols, symbolsMap);
+    if(symbol->isTerminal())
+        throw ParseError(token.location, L"can't use terminal symbol in left-hand side of rule");
+    shared_ptr<NonterminalSymbol> lhs = dynamic_pointer_cast<NonterminalSymbol>(symbol);
+    assert(lhs != nullptr);
+    if(startSymbol == nullptr)
+        startSymbol = lhs;
+    tokenizer.nextToken();
+    getNewLines(tokenizer);
+    if(token.type != TokenType::Colon)
+        throw ParseError(token.location, L"expected :");
+
+    tokenizer.nextToken();
+    getNewLines(tokenizer);
+    SymbolList rhs;
+    wstring code = L"";
+    bool hasCode = false;
+
+    while(token.type != TokenType::Semicolon && token.type != TokenType::EndOfFile)
+    {
+        switch(token.type)
+        {
+        case TokenType::Character:
+            if(hasCode)
+                throw ParseError(token.location, L"expected | or ;");
+            symbol = TerminalSymbol::make(token.makeCharacterLiteral());
+            symbols.insert(symbol);
+            rhs.push_back(symbol);
+            tokenizer.nextToken();
+            break;
+        case TokenType::CodeSection:
+            if(hasCode)
+                throw ParseError(token.location, L"expected | or ;");
+            code = token.value;
+            hasCode = true;
+            tokenizer.nextToken();
+            break;
+        case TokenType::Identifier:
+            if(hasCode)
+                throw ParseError(token.location, L"expected | or ;");
+            symbol = findOrMakeSymbol(token.value, symbols, symbolsMap);
+            symbols.insert(symbol);
+            rhs.push_back(symbol);
+            tokenizer.nextToken();
+            break;
+        case TokenType::Pipe:
+            rules.insert(make_shared<Rule>(lhs, rhs, code));
+            rhs.clear();
+            code = L"";
+            hasCode = false;
+            tokenizer.nextToken();
+            break;
+        case TokenType::String:
+            if(hasCode)
+                throw ParseError(token.location, L"expected | or ;");
+            for(wstring literal : token.makeCharacterLiterals())
+            {
+                symbol = TerminalSymbol::make(literal);
+                symbols.insert(symbol);
+                rhs.push_back(symbol);
+            }
+            tokenizer.nextToken();
+            break;
+        default:
+            throw ParseError(token.location, L"unexpected token");
+        }
+        getNewLines(tokenizer);
+    }
+    rules.insert(make_shared<Rule>(lhs, rhs, code));
+    if(token.type != TokenType::Semicolon)
+        throw ParseError(token.location, L"expected ;");
+    tokenizer.nextToken();
+}
+
+void parseRulesSection(Tokenizer &tokenizer, RuleSet &rules, SymbolSet &symbols, unordered_map<wstring, shared_ptr<Symbol>> &symbolsMap, shared_ptr<NonterminalSymbol> &startSymbol)
+{
+    Token &token = tokenizer.token;
+    getNewLines(tokenizer);
+    if(token.type != TokenType::Identifier)
+        throw ParseError(token.location, L"expected rule");
+    while(token.type == TokenType::Identifier)
+    {
+        parseRule(tokenizer, rules, symbols, symbolsMap, startSymbol);
+        getNewLines(tokenizer);
+    }
+    if(token.type != TokenType::DoublePercent)
+    {
+        throw ParseError(token.location, L"expected %% or a rule");
+    }
+    tokenizer.nextToken();
+}
+
+void parseEpilogueSection(Tokenizer &tokenizer, wstring &epilogueCode)
+{
+    wstring codeSeperator = L"";
+    bool nextAtBeginningOfLine = false;
+    for(;;)
+    {
+        Token &token = tokenizer.token;
+        bool atBeginningOfLine = nextAtBeginningOfLine;
+        nextAtBeginningOfLine = false;
+        switch(token.type)
+        {
+        case TokenType::EndOfFile:
+            return;
+        case TokenType::CodeSection:
+            epilogueCode += codeSeperator;
+            codeSeperator = L"\n\n";
+            epilogueCode += token.value;
+            epilogueCode += L"\n";
+            tokenizer.nextToken();
+            break;
+        case TokenType::EndOfLine:
+            nextAtBeginningOfLine = true;
+            tokenizer.nextToken();
+            break;
+        case TokenType::PercentIdentifier:
+            if(!atBeginningOfLine)
+                throw ParseError(token.location, L"unexpected token");
+            if(token.value == L"%token")
+                throw ParseError(token.location, L"can't use %token here");
+            else
+                throw ParseError(token.location, L"unknown directive");
+            break;
+        default:
+            throw ParseError(token.location, L"unexpected token");
+        }
+    }
+}
+
 int main()
 {
     SymbolSet symbols;
+    unordered_map<wstring, shared_ptr<Symbol>> symbolsMap;
     RuleSet rules;
-    shared_ptr<NonterminalSymbol> startSymbol = make_shared<NonterminalSymbol>(L"Start");
-    symbols.insert(startSymbol);
     shared_ptr<TerminalSymbol> eofSymbol = TerminalSymbol::make(L"EOF");
     symbols.insert(eofSymbol);
-#define DECLARE_SYMBOL(s) \
-    shared_ptr<NonterminalSymbol> symbol ## s = make_shared<NonterminalSymbol>(L ## #s); \
-    symbols.insert(symbol ## s)
-#define DECLARE_TSYMBOL(s, v) \
-    shared_ptr<TerminalSymbol> symbol ## s = TerminalSymbol::make(L ## #v); \
-    symbols.insert(symbol ## s)
-#define DECLARE_RULE(t, code, ...) \
-    rules.insert(make_shared<Rule>(t, SymbolList{__VA_ARGS__}, code))
-    DECLARE_SYMBOL(Statement);
-    DECLARE_SYMBOL(Expression);
-    DECLARE_SYMBOL(Term);
-    DECLARE_SYMBOL(Factor);
-    DECLARE_SYMBOL(Number);
-    DECLARE_SYMBOL(Digit);
-    DECLARE_SYMBOL(WS);
-    DECLARE_TSYMBOL(Plus, '+');
-    DECLARE_TSYMBOL(Minus, '-');
-    DECLARE_TSYMBOL(Times, '*');
-    DECLARE_TSYMBOL(Divide, '/');
-    DECLARE_TSYMBOL(Semicolon, ';');
-    DECLARE_TSYMBOL(LParen, '(');
-    DECLARE_TSYMBOL(RParen, ')');
-    DECLARE_TSYMBOL(Space, ' ');
-    DECLARE_TSYMBOL(Tab, '\t');
-    DECLARE_TSYMBOL(Newline, '\n');
-    DECLARE_TSYMBOL(D0, '0');
-    DECLARE_TSYMBOL(D1, '1');
-    DECLARE_TSYMBOL(D2, '2');
-    DECLARE_TSYMBOL(D3, '3');
-    DECLARE_TSYMBOL(D4, '4');
-    DECLARE_TSYMBOL(D5, '5');
-    DECLARE_TSYMBOL(D6, '6');
-    DECLARE_TSYMBOL(D7, '7');
-    DECLARE_TSYMBOL(D8, '8');
-    DECLARE_TSYMBOL(D9, '9');
-
-    DECLARE_RULE(symbolDigit, L"{$$ = $1 - '0';}", symbolD0);
-    DECLARE_RULE(symbolDigit, L"{$$ = $1 - '0';}", symbolD1);
-    DECLARE_RULE(symbolDigit, L"{$$ = $1 - '0';}", symbolD2);
-    DECLARE_RULE(symbolDigit, L"{$$ = $1 - '0';}", symbolD3);
-    DECLARE_RULE(symbolDigit, L"{$$ = $1 - '0';}", symbolD4);
-    DECLARE_RULE(symbolDigit, L"{$$ = $1 - '0';}", symbolD5);
-    DECLARE_RULE(symbolDigit, L"{$$ = $1 - '0';}", symbolD6);
-    DECLARE_RULE(symbolDigit, L"{$$ = $1 - '0';}", symbolD7);
-    DECLARE_RULE(symbolDigit, L"{$$ = $1 - '0';}", symbolD8);
-    DECLARE_RULE(symbolDigit, L"{$$ = $1 - '0';}", symbolD9);
-
-    //DECLARE_RULE(symbolWS, L"", symbolSpace);
-    //DECLARE_RULE(symbolWS, L"", symbolTab);
-    //DECLARE_RULE(symbolWS, L"", symbolNewline);
-    rules.insert(make_shared<Rule>(symbolWS, SymbolList{}, L""));
-
-    DECLARE_RULE(symbolStatement, L"{cout << \"output : \" << $1 << \"\\n\";}", symbolExpression, symbolWS, symbolSemicolon);
-
-    DECLARE_RULE(startSymbol, L"", symbolStatement);
-    DECLARE_RULE(startSymbol, L"", symbolStatement, symbolNewline);
-    DECLARE_RULE(startSymbol, L"", startSymbol, symbolStatement);
-    DECLARE_RULE(startSymbol, L"", startSymbol, symbolStatement, symbolNewline);
-
-    DECLARE_RULE(symbolNumber, L"{$$ = $2;}", symbolWS, symbolDigit);
-    DECLARE_RULE(symbolNumber, L"{$$ = 10 * $1 + $2;}", symbolNumber, symbolDigit);
-
-    DECLARE_RULE(symbolFactor, L"{$$ = $1;}", symbolNumber);
-    DECLARE_RULE(symbolFactor, L"{$$ = -$3;}", symbolWS, symbolMinus, symbolFactor);
-    DECLARE_RULE(symbolFactor, L"{$$ = $3;}", symbolWS, symbolLParen, symbolExpression, symbolWS, symbolRParen);
-
-    DECLARE_RULE(symbolTerm, L"{$$ = $1;}", symbolFactor);
-    DECLARE_RULE(symbolTerm, L"{if($4 == 0) {cout << \"divide by zero\\n\"; $$ = 0;} else $$ = $1 / $4;}", symbolTerm, symbolWS, symbolDivide, symbolFactor);
-    DECLARE_RULE(symbolTerm, L"{$$ = $1 * $4;}", symbolTerm, symbolWS, symbolTimes, symbolFactor);
-
-    DECLARE_RULE(symbolExpression, L"{$$ = $1;}", symbolTerm);
-    DECLARE_RULE(symbolExpression, L"{$$ = $1 + $4;}", symbolExpression, symbolWS, symbolPlus, symbolTerm);
-    DECLARE_RULE(symbolExpression, L"{$$ = $1 - $4;}", symbolExpression, symbolWS, symbolMinus, symbolTerm);
+    shared_ptr<NonterminalSymbol> startSymbol;
+    wstring prologueCode, epilogueCode;
+    ifstream is("test.parser");
+    try
+    {
+        Tokenizer tokenizer(is);
+        parsePrologueSection(tokenizer, prologueCode, symbols, symbolsMap);
+        parseRulesSection(tokenizer, rules, symbols, symbolsMap, startSymbol);
+        parseEpilogueSection(tokenizer, epilogueCode);
+    }
+    catch(exception &e)
+    {
+        cerr << "Error : " << e.what() << endl;
+        return 1;
+    }
 
     calculateFirstSets(symbols, rules);
 
@@ -319,7 +1095,7 @@ int main()
         return 1;
     shared_ptr<ostream> pcout = shared_ptr<ostream>(&cout, [](ostream *){});
     FileWriter *writer = makeFileWriter(L"C++", "obj/out.cpp", "obj/out.h");
-    writer->writePrologue(L"#include <iostream>\n\nusing std::cout;\ntypedef int ValueType;\n");
+    writer->writePrologue(prologueCode);
     writer->setTerminalList(terminalSymbols);
     writer->setNonterminalList(nonterminalSymbols);
     writer->setRules(rules);
@@ -349,8 +1125,8 @@ int main()
         writer->endGotoState();
     }
     writer->endGotoTable();
-    writer->writeEpilogue(L"struct ParserImp : public MyParser\n{\n    virtual ValueType getToken()\n    {\n        return std::cin.get();\n    }\n};\nint main()\n{\n    ParserImp parser;\n    try\n    {\n        parser.parse();\n    }\n    catch(std::exception &e)\n    {\n        std::cerr << \"error : \" << e.what() << std::endl;\n    }\n}");
+    writer->writeEpilogue(epilogueCode);
     delete writer;
-    system("g++ -x c++ obj/out.cpp -o obj/out-test");
+    system("g++ obj/out.cpp -o obj/out-test");
     return 0;
 }

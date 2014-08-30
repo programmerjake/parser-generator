@@ -43,6 +43,7 @@
 		<Unit filename="rule.h" />
 		<Unit filename="string_cast.h" />
 		<Unit filename="symbol.h" />
+		<Unit filename="test.parser" />
 		<Extensions>
 			<code_completion />
 			<envvars />
