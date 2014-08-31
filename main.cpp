@@ -742,7 +742,7 @@ struct ItemSetProperties
     }
 };
 
-void parsePrologueSection(Tokenizer &tokenizer, wstring &prologueCode, SymbolSet &symbols, unordered_map<wstring, shared_ptr<Symbol>> &symbolsMap)
+void parsePrologueSection(Tokenizer &tokenizer, wstring &prologueCode, SymbolSet &symbols, unordered_map<wstring, shared_ptr<Symbol>> &symbolsMap, unordered_map<wstring, wstring> &outputOptions)
 {
     wstring codeSeperator = L"";
     bool nextAtBeginningOfLine = true;
@@ -786,6 +786,22 @@ void parsePrologueSection(Tokenizer &tokenizer, wstring &prologueCode, SymbolSet
                 }
                 if(token.type != TokenType::EndOfLine && token.type != TokenType::EndOfFile)
                     throw ParseError(token.location, L"unexpected token");
+            }
+            else if(token.value == L"%option")
+            {
+                tokenizer.nextToken();
+                if(token.type != TokenType::String && token.type != TokenType::Identifier)
+                    throw ParseError(token.location, L"expected option name");
+                wstring name = token.value, value = L"";
+                tokenizer.nextToken();
+                if(token.type == TokenType::String)
+                {
+                    value = token.value;
+                    tokenizer.nextToken();
+                }
+                if(token.type != TokenType::EndOfLine && token.type != TokenType::EndOfFile)
+                    throw ParseError(token.location, L"unexpected token");
+                outputOptions[name] = value;
             }
             else
                 throw ParseError(token.location, L"unknown directive");
@@ -948,8 +964,90 @@ void parseEpilogueSection(Tokenizer &tokenizer, wstring &epilogueCode)
     }
 }
 
-int main()
+void version()
 {
+    cout << "Parser Generator v1.0 by Jacob R. Lifshay (c) 2014\n";
+#define STRINGIFY(v) #v
+#if defined(__clang__)
+	/* Clang/LLVM. ---------------------------------------------- */
+    string compilerVersionString = "Clang/LLVM " __clang_version__;
+#elif defined(__ICC) || defined(__INTEL_COMPILER)
+	/* Intel ICC/ICPC. ------------------------------------------ */
+    string compilerVersionString = __VERSION__;
+#elif defined(__GNUC__) || defined(__GNUG__)
+	/* GNU GCC/G++. --------------------------------------------- */
+    string compilerVersionString = "G++ " __VERSION__;
+#elif defined(__HP_cc) || defined(__HP_aCC)
+	/* Hewlett-Packard C/aC++. ---------------------------------- */
+    string compilerVersionString = "HP aC++ " STRINGIFY(__HP_aCC);
+#elif defined(__IBMC__) || defined(__IBMCPP__)
+	/* IBM XL C/C++. -------------------------------------------- */
+    string compilerVersionString = "IBM XL C++ " __xlc__;
+#elif defined(_MSC_VER)
+	/* Microsoft Visual Studio. --------------------------------- */
+    string compilerVersionString = "Microsoft Visual Studio " _MSC_VER;
+#elif defined(__PGI)
+	/* Portland Group PGCC/PGCPP. ------------------------------- */
+    string compilerVersionString = "Portland Group PGCPP " __PGIC__ "." __PGIC_MINOR "." __PGIC_PATCHLEVEL__;
+#else
+#warning unknown compiler
+    string compilerVersionString = "Unknown : '" __VERSION__ "'";
+#endif
+    cout << "Built with " << compilerVersionString << endl;
+}
+
+void help(string programName)
+{
+    version();
+    cout << "\nUsage : " << programName << " [options] [--] <input file>\n\nOptions:\n\n-h\tShow this help.\n-?\n--help\n\n-v\tShow Version.\n--version\n\n--\tStop parsing options.";
+    cout << endl;
+}
+
+int main(int argc, char **argv)
+{
+    string inputFile;
+    bool parseOptions = false, gotInputFile = false;
+    for(int i = 1; i < argc; i++)
+    {
+        string arg = argv[i];
+        if(parseOptions)
+        {
+            if(arg == "-h" || arg == "-?" || arg == "--help")
+            {
+                help(argv[0]);
+                exit(0);
+            }
+            if(arg == "-v" || arg == "--version")
+            {
+                version();
+                exit(0);
+            }
+            if(arg == "--")
+            {
+                parseOptions = false;
+                continue;
+            }
+            if(arg.substr(0, 1) == "-")
+            {
+                cerr << "invalid option : " << arg << endl;
+                exit(1);
+            }
+        }
+        if(gotInputFile)
+        {
+            cerr << "can't specify multiple input files in one command\n";
+            exit(1);
+        }
+        gotInputFile = true;
+        inputFile = arg;
+    }
+
+    if(!gotInputFile)
+    {
+        cerr << "No file to process.\nfor help do '" << argv[0] << " -h'\n";
+        exit(1);
+    }
+
     SymbolSet symbols;
     unordered_map<wstring, shared_ptr<Symbol>> symbolsMap;
     RuleSet rules;
@@ -957,11 +1055,12 @@ int main()
     symbols.insert(eofSymbol);
     shared_ptr<NonterminalSymbol> startSymbol;
     wstring prologueCode, epilogueCode;
-    ifstream is("test.parser");
+    ifstream is(inputFile);
+    unordered_map<wstring, wstring> outputOptions;
     try
     {
         Tokenizer tokenizer(is);
-        parsePrologueSection(tokenizer, prologueCode, symbols, symbolsMap);
+        parsePrologueSection(tokenizer, prologueCode, symbols, symbolsMap, outputOptions);
         parseRulesSection(tokenizer, rules, symbols, symbolsMap, startSymbol);
         parseEpilogueSection(tokenizer, epilogueCode);
     }
@@ -1093,40 +1192,46 @@ int main()
     }
     if(anyConflicts)
         return 1;
-    shared_ptr<ostream> pcout = shared_ptr<ostream>(&cout, [](ostream *){});
-    FileWriter *writer = makeFileWriter(L"C++", "obj/out.cpp", "obj/out.h");
-    writer->writePrologue(prologueCode);
-    writer->setTerminalList(terminalSymbols);
-    writer->setNonterminalList(nonterminalSymbols);
-    writer->setRules(rules);
-    writer->startActionTable(canonicalSets.size());
-    for(size_t state = 0; state < canonicalSets.size(); state++)
+    try
     {
-        const vector<unordered_set<ActionType>> &actionsRow = actionsTable[state];
-        writer->startActionState(state);
-        for(size_t i = 0; i < terminalSymbols.size(); i++)
+        FileWriter *writer = makeFileWriter(L"C++", inputFile, outputOptions);
+        writer->writePrologue(prologueCode);
+        writer->setTerminalList(terminalSymbols);
+        writer->setNonterminalList(nonterminalSymbols);
+        writer->setRules(rules);
+        writer->startActionTable(canonicalSets.size());
+        for(size_t state = 0; state < canonicalSets.size(); state++)
         {
-            for(const ActionType &action : actionsRow[i])
+            const vector<unordered_set<ActionType>> &actionsRow = actionsTable[state];
+            writer->startActionState(state);
+            for(size_t i = 0; i < terminalSymbols.size(); i++)
             {
-                action.write(writer, i);
+                for(const ActionType &action : actionsRow[i])
+                {
+                    action.write(writer, i);
+                }
             }
+            writer->endActionState();
         }
-        writer->endActionState();
-    }
-    writer->endActionTableAndStartGotoTable();
-    for(size_t state = 0; state < canonicalSets.size(); state++)
-    {
-        const vector<size_t> &gotoRow = gotoTable[state];
-        writer->startGotoState(state);
-        for(size_t i = 0; i < nonterminalSymbols.size(); i++)
+        writer->endActionTableAndStartGotoTable();
+        for(size_t state = 0; state < canonicalSets.size(); state++)
         {
-            writer->writeGoto(i, gotoRow[i]);
+            const vector<size_t> &gotoRow = gotoTable[state];
+            writer->startGotoState(state);
+            for(size_t i = 0; i < nonterminalSymbols.size(); i++)
+            {
+                writer->writeGoto(i, gotoRow[i]);
+            }
+            writer->endGotoState();
         }
-        writer->endGotoState();
+        writer->endGotoTable();
+        writer->writeEpilogue(epilogueCode);
+        delete writer;
     }
-    writer->endGotoTable();
-    writer->writeEpilogue(epilogueCode);
-    delete writer;
-    system("g++ obj/out.cpp -o obj/out-test");
+    catch(exception &e)
+    {
+        cerr << "Error : " << e.what() << endl;
+        return 1;
+    }
     return 0;
 }

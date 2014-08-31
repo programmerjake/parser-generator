@@ -4,17 +4,52 @@
 #include <tuple>
 #include <cwctype>
 #include <fstream>
+#include <stdexcept>
+#include <cwctype>
 #include "string_cast.h"
 
 using namespace std;
 
 namespace
 {
+wstring getOption(wstring optionName, wstring optionDefault, const unordered_map<wstring, wstring> &options)
+{
+    auto iter = options.find(optionName);
+    if(iter == options.end())
+        return optionDefault;
+    return get<1>(*iter);
+}
+
+wstring getOptionCppIdentifier(wstring optionName, wstring optionDefault, const unordered_map<wstring, wstring> &options)
+{
+    wstring retval = getOption(optionName, optionDefault, options);
+    if(retval == L"")
+        throw runtime_error("missing value for %option " + string_cast<string>(optionName) + " : must be valid C++ identifier");
+    if(!iswalpha(retval[0]) && retval[0] != '_')
+        throw runtime_error("invalid value for %option " + string_cast<string>(optionName) + " : must be valid C++ identifier");
+    for(wchar_t ch : retval)
+    {
+        if(!iswalnum(ch) && ch != '_')
+            throw runtime_error("invalid value for %option " + string_cast<string>(optionName) + " : must be valid C++ identifier");
+    }
+    return retval;
+}
+
+bool getOptionBoolean(wstring optionName, bool optionDefault, const unordered_map<wstring, wstring> &options)
+{
+    wstring v = getOption(optionName, (optionDefault ? L"true" : L"false"), options);
+    if(v == L"true" || v == L"yes" || v == L"on" || v == L"")
+        return true;
+    if(v == L"false" || v == L"no" || v == L"off")
+        return false;
+    throw runtime_error("invalid value for %option " + string_cast<string>(optionName) + " : use true, false, yes, no, on, or off");
+}
+
 class CPlusPlusFileWriter : public FileWriter
 {
     shared_ptr<ostream> stream2;
     ostream &os2;
-    string valueTypeName, parseClassName, nullString, headerFileName;
+    string valueTypeName, parseClassName, nullString, headerFileName, inputFileName;
     size_t indentAmount = 4;
     string indent(size_t amount)
     {
@@ -28,7 +63,7 @@ class CPlusPlusFileWriter : public FileWriter
     vector<shared_ptr<Rule>> rules;
     string prologue;
     size_t stateCount;
-    bool useEnumClass = false;
+    bool useCpp11 = false;
     wstring getRuleName(shared_ptr<Rule> rule)
     {
         wostringstream ss;
@@ -59,7 +94,7 @@ class CPlusPlusFileWriter : public FileWriter
     void writeParseFunctions()
     {
         string enumPrefix = "";
-        if(useEnumClass)
+        if(useCpp11)
             enumPrefix = "ActionType::";
         os << "size_t " << parseClassName << "::translateToken(const " << valueTypeName << " &tok)\n";
         os << "{\n";
@@ -107,9 +142,9 @@ class CPlusPlusFileWriter : public FileWriter
     }
     void onGotSymbols()
     {
-        os << "// This is a automatically generated file : DO NOT MODIFY\n";
+        os << "// This is a automatically generated file : DO NOT MODIFY\n// This file is generated from '" << inputFileName << "'\n";
         os << "#include \"" << headerFileName << "\"\n";
-        os2 << "// This is a automatically generated file : DO NOT MODIFY\n";
+        os2 << "// This is a automatically generated file : DO NOT MODIFY\n// This file is generated from '" << inputFileName << "'\n";
         os2 << "#ifndef " << getHeaderGuardName() << "\n";
         os2 << "#define " << getHeaderGuardName() << "\n";
         os2 << prologue << "\n";
@@ -123,7 +158,7 @@ class CPlusPlusFileWriter : public FileWriter
         os2 << "public:\n";
         os2 << indent(1) << "struct ParseError : public std::runtime_error\n";
         os2 << indent(1) << "{\n";
-        os2 << indent(2) << "explicit ParseError(const std::string &msg)\n";
+        os2 << indent(2) << "explicit ParseError(const std::string &msg)" << (useCpp11 ? " noexcept" : "") << "\n";
         os2 << indent(3) << ": runtime_error(msg)\n";
         os2 << indent(2) << "{\n";
         os2 << indent(2) << "}\n";
@@ -139,8 +174,8 @@ class CPlusPlusFileWriter : public FileWriter
         os2 << indent(2) << "}\n";
         os2 << indent(1) << "};\n";
         os2 << indent(1) << "std::vector<ElementType> theStack;\n";
-        os2 << indent(1) << "static const size_t ErrorState = ~(size_t)0;\n";
-        os2 << indent(1) << (useEnumClass ? "enum class " : "enum ") << " ActionType\n";
+        os2 << indent(1) << "static " << (useCpp11 ? "constexpr" : "const") << " size_t ErrorState = ~(size_t)0;\n";
+        os2 << indent(1) << (useCpp11 ? "enum class" : "enum") << " ActionType\n";
         os2 << indent(1) << "{\n";
         os2 << indent(2) << "Shift,\n";
         os2 << indent(2) << "Reduce,\n";
@@ -156,9 +191,15 @@ class CPlusPlusFileWriter : public FileWriter
         os2 << indent(1) << "};\n";
     }
 public:
-    CPlusPlusFileWriter(shared_ptr<ostream> stream, shared_ptr<ostream> stream2, string headerFileName)
-        : FileWriter(stream), stream2(stream2), os2(*stream2), valueTypeName("ValueType"), parseClassName("MyParser"), nullString("NULL"), headerFileName(headerFileName)
+    CPlusPlusFileWriter(shared_ptr<ostream> stream, shared_ptr<ostream> stream2, string headerFileName, const unordered_map<wstring, wstring> &options, string inputFileName)
+        : FileWriter(stream), stream2(stream2), os2(*stream2), valueTypeName(string_cast<string>(getOptionCppIdentifier(L"ValueType", L"ValueType", options))), parseClassName(string_cast<string>(getOptionCppIdentifier(L"ClassName", L"MyParser", options))), nullString("NULL"), headerFileName(headerFileName)
     {
+        this->inputFileName = inputFileName;
+        if(getOptionBoolean(L"UseC++11", false, options))
+        {
+            nullString = "nullptr";
+            useCpp11 = true;
+        }
     }
     virtual ~CPlusPlusFileWriter()
     {
@@ -284,28 +325,28 @@ public:
     virtual void writeErrorAction(size_t lookahead) override
     {
         string enumPrefix = parseClassName + "::";
-        if(useEnumClass)
+        if(useCpp11)
             enumPrefix += "ActionType::";
         os << indent(2) << "{" << enumPrefix << "Error, 0, " << nullString << ", 0},\n";
     }
     virtual void writeReduceAction(shared_ptr<Rule> rule, size_t nonterminalIndex, size_t lookahead) override
     {
         string enumPrefix = parseClassName + "::";
-        if(useEnumClass)
+        if(useCpp11)
             enumPrefix += "ActionType::";
         os << indent(2) << "{" << enumPrefix << "Reduce, " << nonterminalIndex << ", &" << parseClassName << "::" << string_cast<string>(getRuleName(rule)) << ", " << rule->rhs.size() << "},\n";
     }
     virtual void writeAcceptAction(shared_ptr<Rule> rule, size_t nonterminalIndex, size_t lookahead) override
     {
         string enumPrefix = parseClassName + "::";
-        if(useEnumClass)
+        if(useCpp11)
             enumPrefix += "ActionType::";
         os << indent(2) << "{" << enumPrefix << "Accept, " << nonterminalIndex << ", &" << parseClassName << "::" << string_cast<string>(getRuleName(rule)) << ", " << rule->rhs.size() << "},\n";
     }
     virtual void writeShiftAction(size_t newState, size_t lookahead) override
     {
         string enumPrefix = parseClassName + "::";
-        if(useEnumClass)
+        if(useCpp11)
             enumPrefix += "ActionType::";
         os << indent(2) << "{" << enumPrefix << "Shift, " << newState << ", " << nullString << ", 0},\n";
     }
@@ -379,9 +420,26 @@ string getRelativeName(string startFile, string destFile)
 }
 }
 
-FileWriter *makeFileWriter(wstring language, string fileName, string headerName)
+FileWriter *makeFileWriter(wstring language, string inputFileName, unordered_map<wstring, wstring> options)
 {
+    string fileName, headerName;
     if(language == CPlusPlusFileWriter::language)
-        return new CPlusPlusFileWriter(make_shared<ofstream>(fileName), make_shared<ofstream>(headerName), getRelativeName(fileName, headerName));
+    {
+        fileName = inputFileName + ".cpp";
+        fileName = string_cast<string>(getOption(L"OutputFile", string_cast<wstring>(fileName), options));
+        string baseFileName = fileName;
+        size_t lastPeriodPosition = baseFileName.find_last_of("./\\");
+        if(lastPeriodPosition != string::npos && baseFileName[lastPeriodPosition] == '.')
+            baseFileName.erase(lastPeriodPosition);
+        headerName = baseFileName + ".h";
+        headerName = string_cast<string>(getOption(L"HeaderFile", string_cast<wstring>(headerName), options));
+        shared_ptr<ostream> outputFile = make_shared<ofstream>(fileName);
+        if(!*outputFile)
+            throw runtime_error("can't open output source file '" + fileName + "'");
+        shared_ptr<ostream> headerFile = make_shared<ofstream>(headerName);
+        if(!*headerFile)
+            throw runtime_error("can't open output header file '" + headerName + "'");
+        return new CPlusPlusFileWriter(outputFile, headerFile, getRelativeName(fileName, headerName), options, inputFileName);
+    }
     throw runtime_error("unknown output language");
 }

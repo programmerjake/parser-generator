@@ -6,6 +6,7 @@
 #include <memory>
 #include <cwchar>
 #include <string>
+#include <unordered_map>
 #include "rule.h"
 #include "symbol.h"
 
@@ -46,6 +47,6 @@ public:
     virtual void writeShiftAction(size_t newState, size_t lookahead) = 0;
 };
 
-FileWriter *makeFileWriter(wstring language, string fileName, string headerName);
+FileWriter *makeFileWriter(wstring language, string inputFileName, unordered_map<wstring, wstring> options = unordered_map<wstring, wstring>());
 
 #endif // FILE_WRITER_H_INCLUDED

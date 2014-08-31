@@ -97,6 +97,8 @@ struct ValueType
 %token TTSemicolon TTAssign TTLEq TTLNE
 %token TTLLT TTLLE TTLGT TTLGE TTEMark
 
+%option "UseC++11"
+
 %%
 
 start: expression TTSemicolon {cout << "output: " << $1 << endl;}
