@@ -299,7 +299,7 @@ public:
         os << "{\n";
         for(size_t i = 0; i < terminals.size(); i++)
         {
-            os << indent(1) << valueTypeName << "(" << terminalSymbolPrefix << string_cast<string>(terminals[i]->name) << "),\n";
+            os << indent(1) << valueTypeName << "(" << (terminals[i]->name.substr(0, 1) == L"\'" ? "" : terminalSymbolPrefix) << string_cast<string>(terminals[i]->name) << "),\n";
         }
         os << "};\n";
         os << "const " << parseClassName << "::ActionEntry " << parseClassName << "::actionTable[" << stateCount << "][" << terminals.size() << "] =\n";
