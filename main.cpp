@@ -1006,7 +1006,7 @@ void help(string programName)
 int main(int argc, char **argv)
 {
     string inputFile;
-    bool parseOptions = false, gotInputFile = false;
+    bool parseOptions = true, gotInputFile = false;
     for(int i = 1; i < argc; i++)
     {
         string arg = argv[i];
