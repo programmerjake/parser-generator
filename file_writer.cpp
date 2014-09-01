@@ -35,6 +35,21 @@ wstring getOptionCppIdentifier(wstring optionName, wstring optionDefault, const 
     return retval;
 }
 
+wstring getOptionCppIdentifierPrefix(wstring optionName, wstring optionDefault, const unordered_map<wstring, wstring> &options)
+{
+    wstring retval = getOption(optionName, optionDefault, options);
+    if(retval == L"")
+        return retval;
+    if(!iswalpha(retval[0]) && retval[0] != '_')
+        throw runtime_error("invalid value for %option " + string_cast<string>(optionName) + " : must be valid C++ identifier");
+    for(wchar_t ch : retval)
+    {
+        if(!iswalnum(ch) && ch != '_')
+            throw runtime_error("invalid value for %option " + string_cast<string>(optionName) + " : must be valid C++ identifier");
+    }
+    return retval;
+}
+
 bool getOptionBoolean(wstring optionName, bool optionDefault, const unordered_map<wstring, wstring> &options)
 {
     wstring v = getOption(optionName, (optionDefault ? L"true" : L"false"), options);
@@ -49,7 +64,7 @@ class CPlusPlusFileWriter : public FileWriter
 {
     shared_ptr<ostream> stream2;
     ostream &os2;
-    string valueTypeName, parseClassName, nullString, headerFileName, inputFileName;
+    string valueTypeName, parseClassName, nullString, headerFileName, inputFileName, terminalSymbolPrefix;
     size_t indentAmount = 4;
     string indent(size_t amount)
     {
@@ -201,6 +216,7 @@ public:
             nullString = "nullptr";
             useCpp11 = true;
         }
+        terminalSymbolPrefix = string_cast<string>(getOptionCppIdentifierPrefix(L"SymbolPrefix", L"", options));
     }
     virtual ~CPlusPlusFileWriter()
     {
@@ -283,7 +299,7 @@ public:
         os << "{\n";
         for(size_t i = 0; i < terminals.size(); i++)
         {
-            os << indent(1) << valueTypeName << "(" << string_cast<string>(terminals[i]->name) << "),\n";
+            os << indent(1) << valueTypeName << "(" << terminalSymbolPrefix << string_cast<string>(terminals[i]->name) << "),\n";
         }
         os << "};\n";
         os << "const " << parseClassName << "::ActionEntry " << parseClassName << "::actionTable[" << stateCount << "][" << terminals.size() << "] =\n";
