@@ -1,91 +1,91 @@
 // This is a automatically generated file : DO NOT MODIFY
 // This file is generated from 'test.parser'
 #include "test.parser.h"
-ValueType MyParser::reduce_to_factor_0()
+ValueType MyParser::reduce_to_factor_0(ValueType &peekToken)
 {
     ValueType retval;
     {if(ValueType::getSymbolTable().count((this->theStack[this->theStack.size() - 1].value).svalue) == 0) handleError("empty variable"); retval = ValueType::getSymbolTable()[(this->theStack[this->theStack.size() - 1].value).svalue];}
     return retval;
 }
-ValueType MyParser::reduce_to_factor_1()
+ValueType MyParser::reduce_to_factor_1(ValueType &peekToken)
 {
     ValueType retval;
     {retval = (this->theStack[this->theStack.size() - 2].value);}
     return retval;
 }
-ValueType MyParser::reduce_to_factor_2()
+ValueType MyParser::reduce_to_factor_2(ValueType &peekToken)
 {
     ValueType retval;
     {retval = (this->theStack[this->theStack.size() - 1].value);}
     return retval;
 }
-ValueType MyParser::reduce_to_factor_3()
+ValueType MyParser::reduce_to_factor_3(ValueType &peekToken)
 {
     ValueType retval;
     {retval = (this->theStack[this->theStack.size() - 1].value);}
     return retval;
 }
-ValueType MyParser::reduce_to_factor_4()
+ValueType MyParser::reduce_to_factor_4(ValueType &peekToken)
 {
     ValueType retval;
     {retval = (this->theStack[this->theStack.size() - 1].value);}
     return retval;
 }
-ValueType MyParser::reduce_to_start_5()
+ValueType MyParser::reduce_to_start_5(ValueType &peekToken)
 {
     ValueType retval;
     {cout << "output: " << (this->theStack[this->theStack.size() - 2].value) << endl;}
     return retval;
 }
-ValueType MyParser::reduce_to_start_6()
+ValueType MyParser::reduce_to_start_6(ValueType &peekToken)
 {
     ValueType retval;
     {cout << "output: " << (this->theStack[this->theStack.size() - 2].value) << endl;}
     return retval;
 }
-ValueType MyParser::reduce_to_expression_7()
+ValueType MyParser::reduce_to_expression_7(ValueType &peekToken)
 {
     ValueType retval;
     {ValueType::getSymbolTable()[(this->theStack[this->theStack.size() - 3].value).svalue] = (this->theStack[this->theStack.size() - 1].value); retval = (this->theStack[this->theStack.size() - 1].value);}
     return retval;
 }
-ValueType MyParser::reduce_to_expression_8()
+ValueType MyParser::reduce_to_expression_8(ValueType &peekToken)
 {
     ValueType retval;
     {retval = (this->theStack[this->theStack.size() - 1].value);}
     return retval;
 }
-ValueType MyParser::reduce_to_add_sub_expression_9()
+ValueType MyParser::reduce_to_add_sub_expression_9(ValueType &peekToken)
 {
     ValueType retval;
     {retval = ValueType(TTNumber, "", (this->theStack[this->theStack.size() - 3].value).getNumber() + (this->theStack[this->theStack.size() - 1].value).getNumber());}
     return retval;
 }
-ValueType MyParser::reduce_to_add_sub_expression_10()
+ValueType MyParser::reduce_to_add_sub_expression_10(ValueType &peekToken)
 {
     ValueType retval;
     {if((this->theStack[this->theStack.size() - 3].value).type == TTString || (this->theStack[this->theStack.size() - 1].value).type == TTString) retval = ValueType(TTString, (this->theStack[this->theStack.size() - 3].value).getString() + (this->theStack[this->theStack.size() - 1].value).getString()); else retval = ValueType(TTNumber, "", (this->theStack[this->theStack.size() - 3].value).getNumber() + (this->theStack[this->theStack.size() - 1].value).getNumber());}
     return retval;
 }
-ValueType MyParser::reduce_to_add_sub_expression_11()
+ValueType MyParser::reduce_to_add_sub_expression_11(ValueType &peekToken)
 {
     ValueType retval;
     {retval = (this->theStack[this->theStack.size() - 1].value);}
     return retval;
 }
-ValueType MyParser::reduce_to_mul_div_expression_12()
+ValueType MyParser::reduce_to_mul_div_expression_12(ValueType &peekToken)
 {
     ValueType retval;
     {if((this->theStack[this->theStack.size() - 1].value).getNumber() == 0) handleError("division by zero"); retval = ValueType(TTNumber, "", (this->theStack[this->theStack.size() - 3].value).getNumber() / (this->theStack[this->theStack.size() - 1].value).getNumber());}
     return retval;
 }
-ValueType MyParser::reduce_to_mul_div_expression_13()
+ValueType MyParser::reduce_to_mul_div_expression_13(ValueType &peekToken)
 {
     ValueType retval;
     {retval = ValueType(TTNumber, "", (this->theStack[this->theStack.size() - 3].value).getNumber() * (this->theStack[this->theStack.size() - 1].value).getNumber());}
     return retval;
 }
-ValueType MyParser::reduce_to_mul_div_expression_14()
+ValueType MyParser::reduce_to_mul_div_expression_14(ValueType &peekToken)
 {
     ValueType retval;
     {retval = (this->theStack[this->theStack.size() - 1].value);}
@@ -1588,10 +1588,11 @@ ValueType MyParser::parse()
             ttok = translateToken(token);
             break;
         case ActionType::Accept:
-            return (this->*actionTable[state][ttok].reduceFn)();
+            return (this->*actionTable[state][ttok].reduceFn)(token);
         case ActionType::Reduce:
         {
-            ValueType value = (this->*actionTable[state][ttok].reduceFn)();
+            ValueType value = (this->*actionTable[state][ttok].reduceFn)(token);
+            ttok = translateToken(token);
             theStack.erase(theStack.begin() + (theStack.size() - actionTable[state][ttok].popCount), theStack.end());
             size_t symbol = actionTable[state][ttok].nextState;
             state = theStack.back().state;

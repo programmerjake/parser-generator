@@ -134,27 +134,27 @@ private:
     {
         ActionType type;
         size_t nextState;
-        ValueType (MyParser::*reduceFn)();
+        ValueType (MyParser::*reduceFn)(ValueType &peekToken);
         size_t popCount;
     };
     static const ActionEntry actionTable[48][21];
     static const size_t gotoTable[48][5];
     static const ValueType terminalsTable[21];
-    ValueType reduce_to_factor_0();
-    ValueType reduce_to_factor_1();
-    ValueType reduce_to_factor_2();
-    ValueType reduce_to_factor_3();
-    ValueType reduce_to_factor_4();
-    ValueType reduce_to_start_5();
-    ValueType reduce_to_start_6();
-    ValueType reduce_to_expression_7();
-    ValueType reduce_to_expression_8();
-    ValueType reduce_to_add_sub_expression_9();
-    ValueType reduce_to_add_sub_expression_10();
-    ValueType reduce_to_add_sub_expression_11();
-    ValueType reduce_to_mul_div_expression_12();
-    ValueType reduce_to_mul_div_expression_13();
-    ValueType reduce_to_mul_div_expression_14();
+    ValueType reduce_to_factor_0(ValueType &peekToken);
+    ValueType reduce_to_factor_1(ValueType &peekToken);
+    ValueType reduce_to_factor_2(ValueType &peekToken);
+    ValueType reduce_to_factor_3(ValueType &peekToken);
+    ValueType reduce_to_factor_4(ValueType &peekToken);
+    ValueType reduce_to_start_5(ValueType &peekToken);
+    ValueType reduce_to_start_6(ValueType &peekToken);
+    ValueType reduce_to_expression_7(ValueType &peekToken);
+    ValueType reduce_to_expression_8(ValueType &peekToken);
+    ValueType reduce_to_add_sub_expression_9(ValueType &peekToken);
+    ValueType reduce_to_add_sub_expression_10(ValueType &peekToken);
+    ValueType reduce_to_add_sub_expression_11(ValueType &peekToken);
+    ValueType reduce_to_mul_div_expression_12(ValueType &peekToken);
+    ValueType reduce_to_mul_div_expression_13(ValueType &peekToken);
+    ValueType reduce_to_mul_div_expression_14(ValueType &peekToken);
     size_t translateToken(const ValueType &tok);
 public:
     virtual ~MyParser()

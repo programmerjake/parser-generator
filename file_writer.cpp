@@ -123,10 +123,11 @@ class CPlusPlusFileWriter : public FileWriter
         os << indent(3) << "ttok = translateToken(token);\n";
         os << indent(3) << "break;\n";
         os << indent(2) << "case " << enumPrefix << "Accept:\n";
-        os << indent(3) << "return (this->*actionTable[state][ttok].reduceFn)();\n";
+        os << indent(3) << "return (this->*actionTable[state][ttok].reduceFn)(token);\n";
         os << indent(2) << "case " << enumPrefix << "Reduce:\n";
         os << indent(2) << "{\n";
-        os << indent(3) << valueTypeName << " value = (this->*actionTable[state][ttok].reduceFn)();\n";
+        os << indent(3) << valueTypeName << " value = (this->*actionTable[state][ttok].reduceFn)(token);\n";
+        os << indent(3) << "ttok = translateToken(token);\n";
         os << indent(3) << "theStack.erase(theStack.begin() + (theStack.size() - actionTable[state][ttok].popCount), theStack.end());\n";
         os << indent(3) << "size_t symbol = actionTable[state][ttok].nextState;\n";
         os << indent(3) << "state = theStack.back().state;\n";
@@ -186,7 +187,7 @@ class CPlusPlusFileWriter : public FileWriter
         os2 << indent(1) << "{\n";
         os2 << indent(2) << "ActionType type;\n";
         os2 << indent(2) << "size_t nextState;\n";
-        os2 << indent(2) << valueTypeName << " (" << parseClassName << "::*reduceFn)();\n";
+        os2 << indent(2) << valueTypeName << " (" << parseClassName << "::*reduceFn)(" << valueTypeName << " &peekToken);\n";
         os2 << indent(2) << "size_t popCount;\n";
         os2 << indent(1) << "};\n";
     }
@@ -248,7 +249,7 @@ public:
         os2 << indent(1) << "static const " << valueTypeName << " terminalsTable[" << terminals.size() << "];\n";
         for(shared_ptr<Rule> rule : rules)
         {
-            os2 << indent(1) << valueTypeName << " " << string_cast<string>(getRuleName(rule)) << "();\n";
+            os2 << indent(1) << valueTypeName << " " << string_cast<string>(getRuleName(rule)) << "(" << valueTypeName << " &peekToken);\n";
         }
         os2 << indent(1) << "size_t translateToken(const " << valueTypeName << " &tok);\n";
         os2 << "public:\n";
@@ -266,7 +267,7 @@ public:
         os2 << "#endif\n";
         for(shared_ptr<Rule> rule : rules)
         {
-            os << valueTypeName << " " << parseClassName << "::" << string_cast<string>(getRuleName(rule)) << "()\n";
+            os << valueTypeName << " " << parseClassName << "::" << string_cast<string>(getRuleName(rule)) << "(" << valueTypeName << " &peekToken)\n";
             os << "{\n";
             os << indent(1) << valueTypeName << " retval;\n";
             os << indent(1) << string_cast<string>(rule->substituteCode([&](int index)
