@@ -40,13 +40,22 @@ wstring getOptionCppIdentifierPrefix(wstring optionName, wstring optionDefault, 
     wstring retval = getOption(optionName, optionDefault, options);
     if(retval == L"")
         return retval;
-    if(!iswalpha(retval[0]) && retval[0] != '_')
-        throw runtime_error("invalid value for %option " + string_cast<string>(optionName) + " : must be valid C++ identifier");
+    if(!iswalpha(retval[0]) && retval[0] != '_' && retval[0] != ':')
+        throw runtime_error("invalid value for %option " + string_cast<string>(optionName) + " : must be valid scoped C++ identifier");
+    int colonCount = 0;
     for(wchar_t ch : retval)
     {
-        if(!iswalnum(ch) && ch != '_')
-            throw runtime_error("invalid value for %option " + string_cast<string>(optionName) + " : must be valid C++ identifier");
+        if(ch == ':')
+        {
+            colonCount++;
+            continue;
+        }
+        if((colonCount != 0 && colonCount != 2) || (!iswalnum(ch) && ch != '_'))
+            throw runtime_error("invalid value for %option " + string_cast<string>(optionName) + " : must be valid scoped C++ identifier");
+        colonCount = 0;
     }
+    if(colonCount != 0 && colonCount != 2)
+        throw runtime_error("invalid value for %option " + string_cast<string>(optionName) + " : must be valid scoped C++ identifier");
     return retval;
 }
 
