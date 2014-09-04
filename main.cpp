@@ -973,7 +973,7 @@ void version()
 void help(string programName)
 {
     version();
-    cout << "\nUsage : " << programName << " [options] [--] <input file>\n\nOptions:\n\n-h\t\tShow this help.\n-?\n--help\n\n--verbose\tShow Version.\n-v\t\tVerbose output.\n\n--\t\tStop parsing options.";
+    cout << "\nUsage : " << programName << " [options] [--] <input file>\n\nOptions:\n\n-h\t\tShow this help.\n-?\n--help\n\n--version\tShow Version.\n\n-v\t\tVerbose output.\n--verbose\n\n--\t\tStop parsing options.";
     cout << endl;
 }
 
@@ -996,7 +996,7 @@ int main(int argc, char **argv)
                 version();
                 exit(0);
             }
-            if(arg == "-v")
+            if(arg == "-v" || arg == "--verbose")
             {
                 verbose = true;
                 continue;
