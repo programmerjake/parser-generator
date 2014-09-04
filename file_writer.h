@@ -28,8 +28,8 @@ public:
     {
     }
     virtual wstring getLanguage() const = 0;
-    virtual void writePrologue(wstring code) = 0;
-    virtual void writeEpilogue(wstring code) = 0;
+    virtual void writePrologue(unordered_multimap<wstring, CodeSection> code) = 0;
+    virtual void writeEpilogue(unordered_multimap<wstring, CodeSection> code) = 0;
     virtual void setTerminalList(vector<shared_ptr<Symbol>> terminals) = 0;
     virtual void setNonterminalList(vector<shared_ptr<Symbol>> nonterminals) = 0;
     virtual void setRules(const RuleSet &rules) = 0;

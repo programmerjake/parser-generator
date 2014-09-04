@@ -11,6 +11,7 @@
 #include <cassert>
 #include <functional>
 #include <cwctype>
+#include "location.h"
 
 using namespace std;
 
@@ -18,19 +19,21 @@ struct Rule final
 {
     shared_ptr<NonterminalSymbol> lhs;
     SymbolList rhs;
-    wstring code;
-    Rule(shared_ptr<NonterminalSymbol> lhs, SymbolList rhs, wstring code = L"")
+    CodeSection code;
+    Rule(shared_ptr<NonterminalSymbol> lhs, SymbolList rhs, CodeSection code = CodeSection())
         : lhs(lhs), rhs(rhs), code(code)
     {
     }
-    wstring substituteCode(function<wstring(int)> getArgString, wstring destString) const
+    wstring substituteCPlusPlusCode(function<wstring(int)> getArgString, wstring destString) const
     {
+        if(code.empty())
+            return L"";
         wint_t stringLiteralDelimiter = WEOF;
         bool gotEscape = false;
         int index = 0;
         bool gotArgString = false, gettingArgString = false;
-        wstring retval;
-        for(wchar_t ch : code)
+        wstring retval = code.location.getCLineDirective();
+        for(wchar_t ch : code.code)
         {
             if(stringLiteralDelimiter != WEOF)
             {

@@ -3,6 +3,8 @@
 #ifndef PARSER_TEST_PARSER_H
 #define PARSER_TEST_PARSER_H
 
+#line 1 "test.parser"
+
 #include <iostream>
 #include <string>
 #include <cctype>

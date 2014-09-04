@@ -3,93 +3,108 @@
 #include "test.parser.h"
 ValueType MyParser::reduce_to_factor_0(ValueType &peekToken)
 {
-    ValueType retval;
-    {if(ValueType::getSymbolTable().count((this->theStack[this->theStack.size() - 1].value).svalue) == 0) handleError("empty variable"); retval = ValueType::getSymbolTable()[(this->theStack[this->theStack.size() - 1].value).svalue];}
-    return retval;
+    ValueType dollar_dollar;
+    #line 126 "test.parser"
+{if(ValueType::getSymbolTable().count((this->theStack[this->theStack.size() - 1].value).svalue) == 0) handleError("empty variable"); dollar_dollar = ValueType::getSymbolTable()[(this->theStack[this->theStack.size() - 1].value).svalue];}
+    return dollar_dollar;
 }
 ValueType MyParser::reduce_to_factor_1(ValueType &peekToken)
 {
-    ValueType retval;
-    {retval = (this->theStack[this->theStack.size() - 2].value);}
-    return retval;
+    ValueType dollar_dollar;
+    #line 125 "test.parser"
+{dollar_dollar = (this->theStack[this->theStack.size() - 2].value);}
+    return dollar_dollar;
 }
 ValueType MyParser::reduce_to_factor_2(ValueType &peekToken)
 {
-    ValueType retval;
-    {retval = (this->theStack[this->theStack.size() - 1].value);}
-    return retval;
+    ValueType dollar_dollar;
+    #line 124 "test.parser"
+{dollar_dollar = (this->theStack[this->theStack.size() - 1].value);}
+    return dollar_dollar;
 }
 ValueType MyParser::reduce_to_factor_3(ValueType &peekToken)
 {
-    ValueType retval;
-    {retval = (this->theStack[this->theStack.size() - 1].value);}
-    return retval;
+    ValueType dollar_dollar;
+    #line 123 "test.parser"
+{dollar_dollar = (this->theStack[this->theStack.size() - 1].value);}
+    return dollar_dollar;
 }
 ValueType MyParser::reduce_to_factor_4(ValueType &peekToken)
 {
-    ValueType retval;
-    {retval = (this->theStack[this->theStack.size() - 1].value);}
-    return retval;
+    ValueType dollar_dollar;
+    #line 122 "test.parser"
+{dollar_dollar = (this->theStack[this->theStack.size() - 1].value);}
+    return dollar_dollar;
 }
 ValueType MyParser::reduce_to_start_5(ValueType &peekToken)
 {
-    ValueType retval;
-    {cout << "output: " << (this->theStack[this->theStack.size() - 2].value) << endl;}
-    return retval;
+    ValueType dollar_dollar;
+    #line 105 "test.parser"
+{cout << "output: " << (this->theStack[this->theStack.size() - 2].value) << endl;}
+    return dollar_dollar;
 }
 ValueType MyParser::reduce_to_start_6(ValueType &peekToken)
 {
-    ValueType retval;
-    {cout << "output: " << (this->theStack[this->theStack.size() - 2].value) << endl;}
-    return retval;
+    ValueType dollar_dollar;
+    #line 104 "test.parser"
+{cout << "output: " << (this->theStack[this->theStack.size() - 2].value) << endl;}
+    return dollar_dollar;
 }
 ValueType MyParser::reduce_to_expression_7(ValueType &peekToken)
 {
-    ValueType retval;
-    {ValueType::getSymbolTable()[(this->theStack[this->theStack.size() - 3].value).svalue] = (this->theStack[this->theStack.size() - 1].value); retval = (this->theStack[this->theStack.size() - 1].value);}
-    return retval;
+    ValueType dollar_dollar;
+    #line 109 "test.parser"
+{ValueType::getSymbolTable()[(this->theStack[this->theStack.size() - 3].value).svalue] = (this->theStack[this->theStack.size() - 1].value); dollar_dollar = (this->theStack[this->theStack.size() - 1].value);}
+    return dollar_dollar;
 }
 ValueType MyParser::reduce_to_expression_8(ValueType &peekToken)
 {
-    ValueType retval;
-    {retval = (this->theStack[this->theStack.size() - 1].value);}
-    return retval;
+    ValueType dollar_dollar;
+    #line 108 "test.parser"
+{dollar_dollar = (this->theStack[this->theStack.size() - 1].value);}
+    return dollar_dollar;
 }
 ValueType MyParser::reduce_to_add_sub_expression_9(ValueType &peekToken)
 {
-    ValueType retval;
-    {retval = ValueType(TTNumber, "", (this->theStack[this->theStack.size() - 3].value).getNumber() + (this->theStack[this->theStack.size() - 1].value).getNumber());}
-    return retval;
+    ValueType dollar_dollar;
+    #line 114 "test.parser"
+{dollar_dollar = ValueType(TTNumber, "", (this->theStack[this->theStack.size() - 3].value).getNumber() + (this->theStack[this->theStack.size() - 1].value).getNumber());}
+    return dollar_dollar;
 }
 ValueType MyParser::reduce_to_add_sub_expression_10(ValueType &peekToken)
 {
-    ValueType retval;
-    {if((this->theStack[this->theStack.size() - 3].value).type == TTString || (this->theStack[this->theStack.size() - 1].value).type == TTString) retval = ValueType(TTString, (this->theStack[this->theStack.size() - 3].value).getString() + (this->theStack[this->theStack.size() - 1].value).getString()); else retval = ValueType(TTNumber, "", (this->theStack[this->theStack.size() - 3].value).getNumber() + (this->theStack[this->theStack.size() - 1].value).getNumber());}
-    return retval;
+    ValueType dollar_dollar;
+    #line 113 "test.parser"
+{if((this->theStack[this->theStack.size() - 3].value).type == TTString || (this->theStack[this->theStack.size() - 1].value).type == TTString) dollar_dollar = ValueType(TTString, (this->theStack[this->theStack.size() - 3].value).getString() + (this->theStack[this->theStack.size() - 1].value).getString()); else dollar_dollar = ValueType(TTNumber, "", (this->theStack[this->theStack.size() - 3].value).getNumber() + (this->theStack[this->theStack.size() - 1].value).getNumber());}
+    return dollar_dollar;
 }
 ValueType MyParser::reduce_to_add_sub_expression_11(ValueType &peekToken)
 {
-    ValueType retval;
-    {retval = (this->theStack[this->theStack.size() - 1].value);}
-    return retval;
+    ValueType dollar_dollar;
+    #line 112 "test.parser"
+{dollar_dollar = (this->theStack[this->theStack.size() - 1].value);}
+    return dollar_dollar;
 }
 ValueType MyParser::reduce_to_mul_div_expression_12(ValueType &peekToken)
 {
-    ValueType retval;
-    {if((this->theStack[this->theStack.size() - 1].value).getNumber() == 0) handleError("division by zero"); retval = ValueType(TTNumber, "", (this->theStack[this->theStack.size() - 3].value).getNumber() / (this->theStack[this->theStack.size() - 1].value).getNumber());}
-    return retval;
+    ValueType dollar_dollar;
+    #line 119 "test.parser"
+{if((this->theStack[this->theStack.size() - 1].value).getNumber() == 0) handleError("division by zero"); dollar_dollar = ValueType(TTNumber, "", (this->theStack[this->theStack.size() - 3].value).getNumber() / (this->theStack[this->theStack.size() - 1].value).getNumber());}
+    return dollar_dollar;
 }
 ValueType MyParser::reduce_to_mul_div_expression_13(ValueType &peekToken)
 {
-    ValueType retval;
-    {retval = ValueType(TTNumber, "", (this->theStack[this->theStack.size() - 3].value).getNumber() * (this->theStack[this->theStack.size() - 1].value).getNumber());}
-    return retval;
+    ValueType dollar_dollar;
+    #line 118 "test.parser"
+{dollar_dollar = ValueType(TTNumber, "", (this->theStack[this->theStack.size() - 3].value).getNumber() * (this->theStack[this->theStack.size() - 1].value).getNumber());}
+    return dollar_dollar;
 }
 ValueType MyParser::reduce_to_mul_div_expression_14(ValueType &peekToken)
 {
-    ValueType retval;
-    {retval = (this->theStack[this->theStack.size() - 1].value);}
-    return retval;
+    ValueType dollar_dollar;
+    #line 117 "test.parser"
+{dollar_dollar = (this->theStack[this->theStack.size() - 1].value);}
+    return dollar_dollar;
 }
 const ValueType MyParser::terminalsTable[21] =
 {
@@ -128,7 +143,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 5, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Shift, 7, nullptr, 0},
+        {MyParser::ActionType::Shift, 6, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -141,6 +156,29 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
     },
     { // state 1
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
+        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
+        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+    },
+    { // state 2
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -163,43 +201,20 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
     },
-    { // state 2
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
-        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
-        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-    },
     { // state 3
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_3, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_3, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_3, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_3, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_3, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_3, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_3, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_3, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_3, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_3, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -211,18 +226,18 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
     },
     { // state 4
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_2, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_2, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_2, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_2, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_2, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_2, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_2, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_2, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_2, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_2, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -234,18 +249,18 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
     },
     { // state 5
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 12, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -256,6 +271,29 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
     },
     { // state 6
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_4, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_4, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_4, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_4, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_4, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+    },
+    { // state 7
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 13, nullptr, 0},
         {MyParser::ActionType::Shift, 14, nullptr, 0},
@@ -278,29 +316,6 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
     },
-    { // state 7
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_4, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_4, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_4, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_4, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_4, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-    },
     { // state 8
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -312,7 +327,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 19, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Shift, 21, nullptr, 0},
+        {MyParser::ActionType::Shift, 20, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -337,7 +352,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_expression_8, 1},
+        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_expression_8, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -358,7 +373,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 5, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Shift, 7, nullptr, 0},
+        {MyParser::ActionType::Shift, 6, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -404,7 +419,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 5, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Shift, 7, nullptr, 0},
+        {MyParser::ActionType::Shift, 6, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -427,7 +442,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 29, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Shift, 7, nullptr, 0},
+        {MyParser::ActionType::Shift, 6, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -450,7 +465,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 29, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Shift, 7, nullptr, 0},
+        {MyParser::ActionType::Shift, 6, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -463,6 +478,29 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
     },
     { // state 15
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
+        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
+        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+    },
+    { // state 16
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -485,42 +523,19 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
     },
-    { // state 16
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
-        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
-        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 3, &MyParser::reduce_to_mul_div_expression_14, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-    },
     { // state 17
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_3, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_3, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_3, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_3, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_3, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_3, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_3, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_3, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_3, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_3, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -533,17 +548,17 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
     },
     { // state 18
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_2, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_2, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_2, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_2, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_2, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_2, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_2, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_2, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_2, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_2, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -556,17 +571,17 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
     },
     { // state 19
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 32, nullptr, 0},
@@ -578,6 +593,29 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
     },
     { // state 20
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_4, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_4, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_4, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_4, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_4, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+    },
+    { // state 21
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 33, nullptr, 0},
         {MyParser::ActionType::Shift, 34, nullptr, 0},
@@ -600,29 +638,6 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
     },
-    { // state 21
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_4, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_4, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_4, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_4, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_4, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-    },
     { // state 22
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -634,7 +649,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 19, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Shift, 21, nullptr, 0},
+        {MyParser::ActionType::Shift, 20, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -658,7 +673,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_expression_8, 1},
+        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_expression_8, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -680,7 +695,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 29, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Shift, 7, nullptr, 0},
+        {MyParser::ActionType::Shift, 6, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -703,7 +718,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 29, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Shift, 7, nullptr, 0},
+        {MyParser::ActionType::Shift, 6, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -751,7 +766,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_expression_7, 3},
+        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_expression_7, 3},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -786,18 +801,18 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
     },
     { // state 29
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -832,18 +847,18 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
     },
     { // state 31
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_1, 3},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_1, 3},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_1, 3},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_1, 3},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_1, 3},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_1, 3},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_1, 3},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_1, 3},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_1, 3},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_1, 3},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -864,7 +879,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 19, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Shift, 21, nullptr, 0},
+        {MyParser::ActionType::Shift, 20, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -887,7 +902,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 43, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Shift, 21, nullptr, 0},
+        {MyParser::ActionType::Shift, 20, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -910,7 +925,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 43, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Shift, 21, nullptr, 0},
+        {MyParser::ActionType::Shift, 20, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -956,7 +971,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 43, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Shift, 21, nullptr, 0},
+        {MyParser::ActionType::Shift, 20, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -979,7 +994,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Shift, 43, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Shift, 21, nullptr, 0},
+        {MyParser::ActionType::Shift, 20, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -1072,7 +1087,7 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_expression_7, 3},
+        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_expression_7, 3},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -1108,17 +1123,17 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
     },
     { // state 43
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_0, 1},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_0, 1},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -1154,17 +1169,17 @@ const MyParser::ActionEntry MyParser::actionTable[48][21] =
     },
     { // state 45
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_1, 3},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_1, 3},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_1, 3},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_1, 3},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_1, 3},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_1, 3},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_1, 3},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_1, 3},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
-        {MyParser::ActionType::Reduce, 2, &MyParser::reduce_to_factor_1, 3},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Error, 0, nullptr, 0},
+        {MyParser::ActionType::Reduce, 1, &MyParser::reduce_to_factor_1, 3},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
         {MyParser::ActionType::Error, 0, nullptr, 0},
@@ -1228,7 +1243,7 @@ const size_t MyParser::gotoTable[48][5] =
         10,
         1,
         2,
-        6,
+        7,
         9,
     },
     { // state 1
@@ -1284,7 +1299,7 @@ const size_t MyParser::gotoTable[48][5] =
         MyParser::ErrorState,
         15,
         16,
-        20,
+        21,
         23,
     },
     { // state 9
@@ -1296,9 +1311,9 @@ const size_t MyParser::gotoTable[48][5] =
     },
     { // state 10
         MyParser::ErrorState,
+        1,
         26,
-        2,
-        6,
+        7,
         9,
     },
     { // state 11
@@ -1310,22 +1325,22 @@ const size_t MyParser::gotoTable[48][5] =
     },
     { // state 12
         MyParser::ErrorState,
+        1,
         27,
-        2,
-        6,
+        7,
         9,
     },
     { // state 13
         MyParser::ErrorState,
-        MyParser::ErrorState,
         28,
+        MyParser::ErrorState,
         MyParser::ErrorState,
         MyParser::ErrorState,
     },
     { // state 14
         MyParser::ErrorState,
-        MyParser::ErrorState,
         30,
+        MyParser::ErrorState,
         MyParser::ErrorState,
         MyParser::ErrorState,
     },
@@ -1380,9 +1395,9 @@ const size_t MyParser::gotoTable[48][5] =
     },
     { // state 22
         MyParser::ErrorState,
+        15,
         35,
-        16,
-        20,
+        21,
         23,
     },
     { // state 23
@@ -1394,15 +1409,15 @@ const size_t MyParser::gotoTable[48][5] =
     },
     { // state 24
         MyParser::ErrorState,
+        1,
         MyParser::ErrorState,
-        2,
         38,
         MyParser::ErrorState,
     },
     { // state 25
         MyParser::ErrorState,
+        1,
         MyParser::ErrorState,
-        2,
         39,
         MyParser::ErrorState,
     },
@@ -1450,22 +1465,22 @@ const size_t MyParser::gotoTable[48][5] =
     },
     { // state 32
         MyParser::ErrorState,
+        15,
         41,
-        16,
-        20,
+        21,
         23,
     },
     { // state 33
         MyParser::ErrorState,
-        MyParser::ErrorState,
         42,
+        MyParser::ErrorState,
         MyParser::ErrorState,
         MyParser::ErrorState,
     },
     { // state 34
         MyParser::ErrorState,
-        MyParser::ErrorState,
         44,
+        MyParser::ErrorState,
         MyParser::ErrorState,
         MyParser::ErrorState,
     },
@@ -1478,15 +1493,15 @@ const size_t MyParser::gotoTable[48][5] =
     },
     { // state 36
         MyParser::ErrorState,
+        15,
         MyParser::ErrorState,
-        16,
         46,
         MyParser::ErrorState,
     },
     { // state 37
         MyParser::ErrorState,
+        15,
         MyParser::ErrorState,
-        16,
         47,
         MyParser::ErrorState,
     },
@@ -1605,6 +1620,8 @@ ValueType MyParser::parse()
         }
     }
 }
+
+#line 130 "test.parser"
 
 map<string, ValueType> &ValueType::getSymbolTable()
 {
@@ -1881,6 +1898,5 @@ int main()
     }
     return 0;
 }
-
 
 

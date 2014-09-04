@@ -17,6 +17,7 @@
 #include "string_cast.h"
 #include "dump.h"
 #include "file_writer.h"
+#include "location.h"
 
 using namespace std;
 
@@ -35,32 +36,13 @@ enum class TokenType
     String,
 };
 
-struct Location
-{
-    size_t line, column;
-    Location(size_t line, size_t column)
-        : line(line), column(column)
-    {
-    }
-    Location()
-        : line(1), column(1)
-    {
-    }
-    explicit operator wstring() const
-    {
-        wostringstream ss;
-        ss << L"Line " << line << ", Column " << column;
-        return ss.str();
-    }
-};
-
 struct Token
 {
+    Location location;
     TokenType type;
     wstring value;
-    Location location;
-    Token(Location location = Location(), TokenType type = TokenType::EndOfFile, wstring value = L"")
-        : type(type), value(value)
+    Token(Location location = Location(L""), TokenType type = TokenType::EndOfFile, wstring value = L"")
+        : location(location), type(type), value(value)
     {
     }
     static wstring getCharacterLiteral(unsigned value)
@@ -220,7 +202,7 @@ struct ParseError : public runtime_error
     Location location;
     wstring msg;
     explicit ParseError(wstring msg)
-        : runtime_error(string_cast<string>(msg)), msg(msg)
+        : runtime_error(string_cast<string>(msg)), location(L""), msg(msg)
     {
     }
     ParseError(Location location, wstring msg)
@@ -388,13 +370,13 @@ class Tokenizer
         }
     }
 public:
-    Tokenizer(wstring input)
-        : input(std::move(input))
+    Tokenizer(wstring fileName, wstring input)
+        : input(std::move(input)), location(fileName, 1, 1)
     {
         nextToken();
     }
-    Tokenizer(istream &is)
-        : input(string_cast<wstring>(loadAll(is)))
+    Tokenizer(wstring fileName, istream &is)
+        : input(string_cast<wstring>(loadAll(is))), location(fileName, 1, 1)
     {
         nextToken();
     }
@@ -742,9 +724,8 @@ struct ItemSetProperties
     }
 };
 
-void parsePrologueSection(Tokenizer &tokenizer, wstring &prologueCode, SymbolSet &symbols, unordered_map<wstring, shared_ptr<Symbol>> &symbolsMap, unordered_map<wstring, wstring> &outputOptions)
+void parsePrologueSection(Tokenizer &tokenizer, unordered_multimap<wstring, CodeSection> &prologueCode, SymbolSet &symbols, unordered_map<wstring, shared_ptr<Symbol>> &symbolsMap, unordered_map<wstring, wstring> &outputOptions)
 {
-    wstring codeSeperator = L"";
     bool nextAtBeginningOfLine = true;
     for(;;)
     {
@@ -759,10 +740,7 @@ void parsePrologueSection(Tokenizer &tokenizer, wstring &prologueCode, SymbolSet
             tokenizer.nextToken();
             return;
         case TokenType::CodeSection:
-            prologueCode += codeSeperator;
-            codeSeperator = L"\n\n";
-            prologueCode += token.value;
-            prologueCode += L"\n";
+            prologueCode.insert(make_pair(L"", CodeSection(token.location, token.value)));
             tokenizer.nextToken();
             break;
         case TokenType::EndOfLine:
@@ -849,7 +827,7 @@ void parseRule(Tokenizer &tokenizer, RuleSet &rules, SymbolSet &symbols, unorder
     tokenizer.nextToken();
     getNewLines(tokenizer);
     SymbolList rhs;
-    wstring code = L"";
+    CodeSection code = CodeSection();
     bool hasCode = false;
 
     while(token.type != TokenType::Semicolon && token.type != TokenType::EndOfFile)
@@ -867,7 +845,7 @@ void parseRule(Tokenizer &tokenizer, RuleSet &rules, SymbolSet &symbols, unorder
         case TokenType::CodeSection:
             if(hasCode)
                 throw ParseError(token.location, L"expected | or ;");
-            code = token.value;
+            code = CodeSection(token.location, token.value);
             hasCode = true;
             tokenizer.nextToken();
             break;
@@ -882,7 +860,7 @@ void parseRule(Tokenizer &tokenizer, RuleSet &rules, SymbolSet &symbols, unorder
         case TokenType::Pipe:
             rules.insert(make_shared<Rule>(lhs, rhs, code));
             rhs.clear();
-            code = L"";
+            code = CodeSection();
             hasCode = false;
             tokenizer.nextToken();
             break;
@@ -926,9 +904,8 @@ void parseRulesSection(Tokenizer &tokenizer, RuleSet &rules, SymbolSet &symbols,
     tokenizer.nextToken();
 }
 
-void parseEpilogueSection(Tokenizer &tokenizer, wstring &epilogueCode)
+void parseEpilogueSection(Tokenizer &tokenizer, unordered_multimap<wstring, CodeSection> &epilogueCode)
 {
-    wstring codeSeperator = L"";
     bool nextAtBeginningOfLine = false;
     for(;;)
     {
@@ -940,10 +917,7 @@ void parseEpilogueSection(Tokenizer &tokenizer, wstring &epilogueCode)
         case TokenType::EndOfFile:
             return;
         case TokenType::CodeSection:
-            epilogueCode += codeSeperator;
-            codeSeperator = L"\n\n";
-            epilogueCode += token.value;
-            epilogueCode += L"\n";
+            epilogueCode.insert(make_pair(L"", CodeSection(token.location, token.value)));
             tokenizer.nextToken();
             break;
         case TokenType::EndOfLine:
@@ -966,7 +940,7 @@ void parseEpilogueSection(Tokenizer &tokenizer, wstring &epilogueCode)
 
 void version()
 {
-    cout << "Parser Generator v1.0 by Jacob R. Lifshay (c) 2014\n";
+    cout << "Parser Generator v1.0.1 by Jacob R. Lifshay (c) 2014\n";
 #define STRINGIFY(v) #v
 #if defined(__clang__)
 	/* Clang/LLVM. ---------------------------------------------- */
@@ -999,14 +973,14 @@ void version()
 void help(string programName)
 {
     version();
-    cout << "\nUsage : " << programName << " [options] [--] <input file>\n\nOptions:\n\n-h\tShow this help.\n-?\n--help\n\n-v\tShow Version.\n--version\n\n--\tStop parsing options.";
+    cout << "\nUsage : " << programName << " [options] [--] <input file>\n\nOptions:\n\n-h\t\tShow this help.\n-?\n--help\n\n--verbose\tShow Version.\n-v\t\tVerbose output.\n\n--\t\tStop parsing options.";
     cout << endl;
 }
 
 int main(int argc, char **argv)
 {
     string inputFile;
-    bool parseOptions = true, gotInputFile = false;
+    bool parseOptions = true, gotInputFile = false, verbose = false;
     for(int i = 1; i < argc; i++)
     {
         string arg = argv[i];
@@ -1017,10 +991,15 @@ int main(int argc, char **argv)
                 help(argv[0]);
                 exit(0);
             }
-            if(arg == "-v" || arg == "--version")
+            if(arg == "--version")
             {
                 version();
                 exit(0);
+            }
+            if(arg == "-v")
+            {
+                verbose = true;
+                continue;
             }
             if(arg == "--")
             {
@@ -1054,12 +1033,12 @@ int main(int argc, char **argv)
     shared_ptr<TerminalSymbol> eofSymbol = TerminalSymbol::make(L"EOF");
     symbols.insert(eofSymbol);
     shared_ptr<NonterminalSymbol> startSymbol;
-    wstring prologueCode, epilogueCode;
-    ifstream is(inputFile);
+    unordered_multimap<wstring, CodeSection> prologueCode, epilogueCode;
     unordered_map<wstring, wstring> outputOptions;
     try
     {
-        Tokenizer tokenizer(is);
+        ifstream is(inputFile);
+        Tokenizer tokenizer(string_cast<wstring>(inputFile), is);
         parsePrologueSection(tokenizer, prologueCode, symbols, symbolsMap, outputOptions);
         parseRulesSection(tokenizer, rules, symbols, symbolsMap, startSymbol);
         parseEpilogueSection(tokenizer, epilogueCode);
@@ -1070,7 +1049,17 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    if(verbose)
+    {
+        cout << "parsed input file." << endl;
+    }
+
     calculateFirstSets(symbols, rules);
+
+    if(verbose)
+    {
+        cout << "calculated First sets." << endl;
+    }
 
     ItemSet startSet;
     for(shared_ptr<Rule> rule : rules.match(startSymbol))
@@ -1090,6 +1079,11 @@ int main(int argc, char **argv)
 
     for(size_t i = 0; i < canonicalSets.size(); i++)
     {
+        if(verbose)
+        {
+            cout << "processing canonical set " << (i + 1) << " out of " << canonicalSets.size() << "\x1b[K\r" << flush;
+        }
+
         for(shared_ptr<Symbol> symbol : symbols)
         {
             ItemSet newSet = calculateGoto(get<0>(canonicalSets[i]), symbol, rules);
@@ -1105,6 +1099,11 @@ int main(int argc, char **argv)
             get<1>(canonicalSets[i]).gotoTable[symbol] = properties.index;
             //cout << "goto(" << (i + 1) << ", " << string_cast<string>(dumpSymbol(symbol, formatting)) << ") = " << (properties.index + 1) << endl << endl;
         }
+    }
+
+    if(verbose)
+    {
+        cout << "processed " << canonicalSets.size() << " canonical sets.\x1b[K" << endl;
     }
 
     vector<shared_ptr<Symbol>> terminalSymbols;
@@ -1173,7 +1172,7 @@ int main(int argc, char **argv)
                 actionsRow[symbolIndex].insert(ActionType());
             else if(actionsRow[symbolIndex].size() > 1)
             {
-                cerr << "conflict on lookahead of " << string_cast<string>(dumpSymbol(terminalSymbols[symbolIndex], FormattingOptions())) << " : \n";
+                cerr << inputFile << ": error: conflict on lookahead of " << string_cast<string>(dumpSymbol(terminalSymbols[symbolIndex], FormattingOptions())) << " : \n";
                 for(ActionType action : actionsRow[symbolIndex])
                 {
                     cerr << "    " << string_cast<string>(static_cast<wstring>(action)) << "\n";
@@ -1192,6 +1191,12 @@ int main(int argc, char **argv)
     }
     if(anyConflicts)
         return 1;
+
+    if(verbose)
+    {
+        cout << "filled tables." << endl;
+    }
+
     try
     {
         FileWriter *writer = makeFileWriter(L"C++", inputFile, outputOptions);
@@ -1230,8 +1235,13 @@ int main(int argc, char **argv)
     }
     catch(exception &e)
     {
-        cerr << "Error : " << e.what() << endl;
+        cerr << inputFile << ": error : " << e.what() << endl;
         return 1;
+    }
+
+    if(verbose)
+    {
+        cout << "wrote output files." << endl;
     }
     return 0;
 }

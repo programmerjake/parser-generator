@@ -95,7 +95,7 @@ inline wstring dumpRule(shared_ptr<Rule> rule, FormattingOptions formatting)
     retval += L" : ";
     retval += dumpSymbols(rule->rhs, formatting, false);
     retval += L" ";
-    retval += rule->code;
+    retval += rule->code.code;
     retval += L";";
     return retval;
 }

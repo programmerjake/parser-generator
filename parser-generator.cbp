@@ -40,6 +40,7 @@
 		<Unit filename="generate.cpp" />
 		<Unit filename="generate.h" />
 		<Unit filename="item.h" />
+		<Unit filename="location.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="rule.h" />
 		<Unit filename="string_cast.h" />

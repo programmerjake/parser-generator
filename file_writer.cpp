@@ -235,13 +235,36 @@ public:
     {
         return language;
     }
-    virtual void writePrologue(wstring code) override
+    virtual void writePrologue(unordered_multimap<wstring, CodeSection> code) override
     {
-        prologue = string_cast<string>(code);
+        prologue = "";
+        for(auto v : code)
+        {
+            const CodeSection &codeSection = std::get<1>(v);
+            if(std::get<0>(v) == L"")
+            {
+                if(codeSection.empty())
+                    continue;
+                prologue += "\n" + string_cast<string>(codeSection.location.getCLineDirective() + codeSection.code) + "\n";
+            }
+            else
+                throw runtime_error("invalid code section name : " + string_cast<string>(std::get<0>(v)));
+        }
     }
-    virtual void writeEpilogue(wstring code) override
+    virtual void writeEpilogue(unordered_multimap<wstring, CodeSection> code) override
     {
-        os << string_cast<string>(code) << "\n";
+        for(auto v : code)
+        {
+            const CodeSection &codeSection = std::get<1>(v);
+            if(std::get<0>(v) == L"")
+            {
+                if(codeSection.empty())
+                    continue;
+                os << endl << string_cast<string>(codeSection.location.getCLineDirective() + codeSection.code) << endl;
+            }
+            else
+                throw runtime_error("invalid code section name : " + string_cast<string>(std::get<0>(v)));
+        }
     }
     virtual void setTerminalList(vector<shared_ptr<Symbol>> terminals) override
     {
@@ -294,14 +317,14 @@ public:
         {
             os << valueTypeName << " " << parseClassName << "::" << string_cast<string>(getRuleName(rule)) << "(" << valueTypeName << " &peekToken)\n";
             os << "{\n";
-            os << indent(1) << valueTypeName << " retval;\n";
-            os << indent(1) << string_cast<string>(rule->substituteCode([&](int index)
+            os << indent(1) << valueTypeName << " dollar_dollar;\n";
+            os << indent(1) << string_cast<string>(rule->substituteCPlusPlusCode([&](int index)
             {
                 wostringstream ss;
                 ss << L"(this->theStack[this->theStack.size() - " << (rule->rhs.size() - index + 1) << "].value)";
                 return ss.str();
-            }, L"retval")) << "\n";
-            os << indent(1) << "return retval;\n";
+            }, L"dollar_dollar")) << "\n";
+            os << indent(1) << "return dollar_dollar;\n";
             os << "}\n";
         }
         os << "const " << valueTypeName << " " << parseClassName << "::terminalsTable[" << terminals.size() << "] =\n";
