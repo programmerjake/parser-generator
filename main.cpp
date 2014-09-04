@@ -940,7 +940,7 @@ void parseEpilogueSection(Tokenizer &tokenizer, unordered_multimap<wstring, Code
 
 void version()
 {
-    cout << "Parser Generator v1.0.1 by Jacob R. Lifshay (c) 2014\n";
+    cout << "parser-generator 1.0-beta\nCopyright (C) 2014 Jacob R. Lifshay\nLicense GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n";
 #define STRINGIFY(v) #v
 #if defined(__clang__)
 	/* Clang/LLVM. ---------------------------------------------- */
