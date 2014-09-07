@@ -7,14 +7,15 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include "gc.h"
 #include <unordered_set>
 
 struct Item final
 {
-    shared_ptr<Rule> rule;
+    gc_pointer<Rule> rule;
     size_t currentLocation;
-    shared_ptr<TerminalSymbol> lookahead;
-    Item(shared_ptr<Rule> rule, size_t currentLocation, shared_ptr<TerminalSymbol> lookahead)
+    gc_pointer<TerminalSymbol> lookahead;
+    Item(gc_pointer<Rule> rule, size_t currentLocation, gc_pointer<TerminalSymbol> lookahead)
         : rule(rule), currentLocation(currentLocation), lookahead(lookahead)
     {
     }
@@ -35,7 +36,7 @@ struct hash<Item>
 {
     size_t operator ()(const Item &item) const
     {
-        return hash<shared_ptr<Rule>>()(item.rule) * 17 + item.currentLocation * 5 + hash<shared_ptr<TerminalSymbol>>()(item.lookahead);
+        return hash<gc_pointer<Rule>>()(item.rule) * 17 + item.currentLocation * 5 + hash<gc_pointer<TerminalSymbol>>()(item.lookahead);
     }
 };
 }

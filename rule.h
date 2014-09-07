@@ -5,6 +5,7 @@
 #include <cwchar>
 #include <string>
 #include <memory>
+#include "gc.h"
 #include <unordered_map>
 #include <iterator>
 #include <tuple>
@@ -17,10 +18,10 @@ using namespace std;
 
 struct Rule final
 {
-    shared_ptr<NonterminalSymbol> lhs;
+    gc_pointer<NonterminalSymbol> lhs;
     SymbolList rhs;
     CodeSection code;
-    Rule(shared_ptr<NonterminalSymbol> lhs, SymbolList rhs, CodeSection code = CodeSection())
+    Rule(gc_pointer<NonterminalSymbol> lhs, SymbolList rhs, CodeSection code = CodeSection())
         : lhs(lhs), rhs(rhs), code(code)
     {
     }
@@ -100,10 +101,10 @@ struct Rule final
 
 class RuleSet final
 {
-    typedef unordered_multimap<shared_ptr<NonterminalSymbol>, shared_ptr<Rule>> RulesType;
+    typedef unordered_multimap<gc_pointer<NonterminalSymbol>, gc_pointer<Rule>> RulesType;
     RulesType rules;
 public:
-    class iterator : public std::iterator<std::forward_iterator_tag, const shared_ptr<Rule>>
+    class iterator : public std::iterator<std::forward_iterator_tag, const gc_pointer<Rule>>
     {
         friend class RuleSet;
         RulesType::const_iterator internalIterator;
@@ -115,11 +116,11 @@ public:
         iterator()
         {
         }
-        const shared_ptr<Rule> &operator *() const
+        const gc_pointer<Rule> &operator *() const
         {
             return get<1>(*internalIterator);
         }
-        const shared_ptr<Rule> *operator ->() const
+        const gc_pointer<Rule> *operator ->() const
         {
             return &get<1>(*internalIterator);
         }
@@ -181,12 +182,12 @@ public:
             return sizeValue;
         }
     };
-    MatchRetval match(shared_ptr<NonterminalSymbol> key) const
+    MatchRetval match(gc_pointer<NonterminalSymbol> key) const
     {
         auto v = rules.equal_range(key);
         return MatchRetval(iterator(get<0>(v)), iterator(get<1>(v)), rules.count(key));
     }
-    iterator find(shared_ptr<Rule> lookFor) const
+    iterator find(gc_pointer<Rule> lookFor) const
     {
         auto matches = match(lookFor->lhs);
         for(auto i = matches.begin(); i != matches.end(); ++i)
@@ -196,12 +197,12 @@ public:
         }
         return end();
     }
-    iterator insert(const shared_ptr<Rule> &rule)
+    iterator insert(const gc_pointer<Rule> &rule)
     {
         assert(rule != nullptr);
         return iterator(rules.insert(make_pair(rule->lhs, rule)));
     }
-    size_t count(shared_ptr<NonterminalSymbol> key) const
+    size_t count(gc_pointer<NonterminalSymbol> key) const
     {
         return rules.count(key);
     }
@@ -247,8 +248,8 @@ struct hash<RuleSet>
     size_t operator ()(const RuleSet & rs) const
     {
         size_t retval = rs.size() * 8191;
-        hash<shared_ptr<Rule>> pointerHasher;
-        for(shared_ptr<Rule> rule : rs) // must be order independent
+        hash<gc_pointer<Rule>> pointerHasher;
+        for(gc_pointer<Rule> rule : rs) // must be order independent
         {
             retval += pointerHasher(rule);
         }

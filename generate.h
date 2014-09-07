@@ -6,9 +6,9 @@
 #include "item.h"
 
 void calculateFirstSets(const SymbolSet &symbols, const RuleSet &rules);
-TerminalSet first(shared_ptr<Symbol> symbol);
+TerminalSet first(gc_pointer<Symbol> symbol);
 TerminalSet first(SymbolList symbols);
 ItemSet closure(ItemSet items, const RuleSet &rules);
-ItemSet calculateGoto(ItemSet items, shared_ptr<Symbol> acceptedSymbol, const RuleSet &rules);
+ItemSet calculateGoto(ItemSet items, gc_pointer<Symbol> acceptedSymbol, const RuleSet &rules);
 
 #endif // GENERATE_H_INCLUDED

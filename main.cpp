@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cwctype>
 #include <stdexcept>
+#include <chrono>
 #include "symbol.h"
 #include "rule.h"
 #include "item.h"
@@ -641,13 +642,13 @@ struct ActionType
         Accept,
     };
     Type type;
-    shared_ptr<Rule> rule;
+    gc_pointer<Rule> rule;
     size_t index = NoIndex;
     ActionType()
         : type(Error), rule(nullptr)
     {
     }
-    ActionType(shared_ptr<Rule> rule, size_t index, bool isAccept)
+    ActionType(gc_pointer<Rule> rule, size_t index, bool isAccept)
         : type(isAccept ? Accept : Reduce), rule(rule), index(index)
     {
     }
@@ -665,7 +666,7 @@ struct ActionType
     }
     size_t hashCode() const
     {
-        return (size_t)type * 5 + hash<shared_ptr<Rule>>()(rule) + index * 17;
+        return (size_t)type * 5 + hash<gc_pointer<Rule>>()(rule) + index * 17;
     }
     void write(FileWriter *writer, size_t lookahead) const
     {
@@ -717,14 +718,14 @@ struct hash<ActionType>
 struct ItemSetProperties
 {
     size_t index;
-    unordered_map<shared_ptr<Symbol>, size_t> gotoTable;
+    unordered_map<gc_pointer<Symbol>, size_t> gotoTable;
     ItemSetProperties(size_t index = NoIndex)
         : index(index)
     {
     }
 };
 
-void parsePrologueSection(Tokenizer &tokenizer, unordered_multimap<wstring, CodeSection> &prologueCode, SymbolSet &symbols, unordered_map<wstring, shared_ptr<Symbol>> &symbolsMap, unordered_map<wstring, wstring> &outputOptions)
+void parsePrologueSection(Tokenizer &tokenizer, unordered_multimap<wstring, CodeSection> &prologueCode, SymbolSet &symbols, unordered_map<wstring, gc_pointer<Symbol>> &symbolsMap, unordered_map<wstring, wstring> &outputOptions)
 {
     bool nextAtBeginningOfLine = true;
     for(;;)
@@ -757,7 +758,7 @@ void parsePrologueSection(Tokenizer &tokenizer, unordered_multimap<wstring, Code
                 {
                     if(symbolsMap.count(token.value) > 0)
                         throw ParseError(token.location, L"already declared as token");
-                    shared_ptr<Symbol> symbol = TerminalSymbol::make(token.value);
+                    gc_pointer<Symbol> symbol = TerminalSymbol::make(token.value);
                     symbolsMap[token.value] = symbol;
                     symbols.insert(symbol);
                     tokenizer.nextToken();
@@ -790,12 +791,12 @@ void parsePrologueSection(Tokenizer &tokenizer, unordered_multimap<wstring, Code
     }
 }
 
-shared_ptr<Symbol> findOrMakeSymbol(wstring name, SymbolSet &symbols, unordered_map<wstring, shared_ptr<Symbol>> &symbolsMap)
+gc_pointer<Symbol> findOrMakeSymbol(wstring name, SymbolSet &symbols, unordered_map<wstring, gc_pointer<Symbol>> &symbolsMap)
 {
-    shared_ptr<Symbol> &retval = symbolsMap[name];
+    gc_pointer<Symbol> &retval = symbolsMap[name];
     if(retval == nullptr)
     {
-        retval = make_shared<NonterminalSymbol>(name);
+        retval = make_gc_ptr<NonterminalSymbol>(name);
         symbols.insert(retval);
     }
     return retval;
@@ -807,15 +808,15 @@ void getNewLines(Tokenizer &tokenizer)
         tokenizer.nextToken();
 }
 
-void parseRule(Tokenizer &tokenizer, RuleSet &rules, SymbolSet &symbols, unordered_map<wstring, shared_ptr<Symbol>> &symbolsMap, shared_ptr<NonterminalSymbol> &startSymbol)
+void parseRule(Tokenizer &tokenizer, RuleSet &rules, SymbolSet &symbols, unordered_map<wstring, gc_pointer<Symbol>> &symbolsMap, gc_pointer<NonterminalSymbol> &startSymbol)
 {
     Token &token = tokenizer.token;
     if(token.type != TokenType::Identifier)
         throw ParseError(token.location, L"expected an identifier");
-    shared_ptr<Symbol> symbol = findOrMakeSymbol(token.value, symbols, symbolsMap);
+    gc_pointer<Symbol> symbol = findOrMakeSymbol(token.value, symbols, symbolsMap);
     if(symbol->isTerminal())
         throw ParseError(token.location, L"can't use terminal symbol in left-hand side of rule");
-    shared_ptr<NonterminalSymbol> lhs = dynamic_pointer_cast<NonterminalSymbol>(symbol);
+    gc_pointer<NonterminalSymbol> lhs = dynamic_pointer_cast<NonterminalSymbol>(symbol);
     assert(lhs != nullptr);
     if(startSymbol == nullptr)
         startSymbol = lhs;
@@ -858,7 +859,7 @@ void parseRule(Tokenizer &tokenizer, RuleSet &rules, SymbolSet &symbols, unorder
             tokenizer.nextToken();
             break;
         case TokenType::Pipe:
-            rules.insert(make_shared<Rule>(lhs, rhs, code));
+            rules.insert(make_gc_ptr<Rule>(lhs, rhs, code));
             rhs.clear();
             code = CodeSection();
             hasCode = false;
@@ -880,13 +881,13 @@ void parseRule(Tokenizer &tokenizer, RuleSet &rules, SymbolSet &symbols, unorder
         }
         getNewLines(tokenizer);
     }
-    rules.insert(make_shared<Rule>(lhs, rhs, code));
+    rules.insert(make_gc_ptr<Rule>(lhs, rhs, code));
     if(token.type != TokenType::Semicolon)
         throw ParseError(token.location, L"expected ;");
     tokenizer.nextToken();
 }
 
-void parseRulesSection(Tokenizer &tokenizer, RuleSet &rules, SymbolSet &symbols, unordered_map<wstring, shared_ptr<Symbol>> &symbolsMap, shared_ptr<NonterminalSymbol> &startSymbol)
+void parseRulesSection(Tokenizer &tokenizer, RuleSet &rules, SymbolSet &symbols, unordered_map<wstring, gc_pointer<Symbol>> &symbolsMap, gc_pointer<NonterminalSymbol> &startSymbol)
 {
     Token &token = tokenizer.token;
     getNewLines(tokenizer);
@@ -940,7 +941,7 @@ void parseEpilogueSection(Tokenizer &tokenizer, unordered_multimap<wstring, Code
 
 void version()
 {
-    cout << "parser-generator 1.0-beta\nCopyright (C) 2014 Jacob R. Lifshay\nLicense GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n";
+    cout << "parser-generator 1.1-alpha\nCopyright (C) 2014 Jacob R. Lifshay\nLicense GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n";
 #define STRINGIFY(v) #v
 #if defined(__clang__)
 	/* Clang/LLVM. ---------------------------------------------- */
@@ -1028,11 +1029,11 @@ int main(int argc, char **argv)
     }
 
     SymbolSet symbols;
-    unordered_map<wstring, shared_ptr<Symbol>> symbolsMap;
+    unordered_map<wstring, gc_pointer<Symbol>> symbolsMap;
     RuleSet rules;
-    shared_ptr<TerminalSymbol> eofSymbol = TerminalSymbol::make(L"EOF");
+    gc_pointer<TerminalSymbol> eofSymbol = TerminalSymbol::make(L"EOF");
     symbols.insert(eofSymbol);
-    shared_ptr<NonterminalSymbol> startSymbol;
+    gc_pointer<NonterminalSymbol> startSymbol;
     unordered_multimap<wstring, CodeSection> prologueCode, epilogueCode;
     unordered_map<wstring, wstring> outputOptions;
     try
@@ -1062,7 +1063,7 @@ int main(int argc, char **argv)
     }
 
     ItemSet startSet;
-    for(shared_ptr<Rule> rule : rules.match(startSymbol))
+    for(gc_pointer<Rule> rule : rules.match(startSymbol))
     {
         startSet.insert(Item(rule, 0, eofSymbol));
     }
@@ -1077,14 +1078,21 @@ int main(int argc, char **argv)
 
     //cout << "Set " << nextSet << " : " << string_cast<string>(dumpItemSet(get<0>(canonicalSets.back()), formatting)) << endl << endl;
 
+    auto lastTime = chrono::steady_clock::now();
+
     for(size_t i = 0; i < canonicalSets.size(); i++)
     {
         if(verbose)
         {
-            cout << "processing canonical set " << (i + 1) << " out of " << canonicalSets.size() << "\x1b[K\r" << flush;
+            auto currentTime = chrono::steady_clock::now();
+            if(currentTime - lastTime >= chrono::milliseconds(500))
+            {
+                lastTime = currentTime;
+                cout << "processing canonical set " << (i + 1) << " out of " << canonicalSets.size() << "\x1b[K\r" << flush;
+            }
         }
 
-        for(shared_ptr<Symbol> symbol : symbols)
+        for(gc_pointer<Symbol> symbol : symbols)
         {
             ItemSet newSet = calculateGoto(get<0>(canonicalSets[i]), symbol, rules);
             if(newSet.empty())
@@ -1106,17 +1114,17 @@ int main(int argc, char **argv)
         cout << "processed " << canonicalSets.size() << " canonical sets.\x1b[K" << endl;
     }
 
-    vector<shared_ptr<Symbol>> terminalSymbols;
-    unordered_map<shared_ptr<Symbol>, size_t> terminalSymbolMap;
-    vector<shared_ptr<Symbol>> nonterminalSymbols;
-    unordered_map<shared_ptr<Symbol>, size_t> nonterminalSymbolMap;
+    vector<gc_pointer<Symbol>> terminalSymbols;
+    unordered_map<gc_pointer<Symbol>, size_t> terminalSymbolMap;
+    vector<gc_pointer<Symbol>> nonterminalSymbols;
+    unordered_map<gc_pointer<Symbol>, size_t> nonterminalSymbolMap;
 
     terminalSymbolMap[eofSymbol] = terminalSymbols.size();
     terminalSymbols.push_back(eofSymbol); // eof must be first terminal
     nonterminalSymbolMap[startSymbol] = nonterminalSymbols.size();
     nonterminalSymbols.push_back(startSymbol); // start must be first nonterminal
 
-    for(shared_ptr<Symbol> symbol : symbols)
+    for(gc_pointer<Symbol> symbol : symbols)
     {
         if(symbol == eofSymbol || symbol == startSymbol)
             continue;
@@ -1158,10 +1166,10 @@ int main(int argc, char **argv)
             }
             else
             {
-                shared_ptr<Symbol> nextSymbol = item.rule->rhs[item.currentLocation];
+                gc_pointer<Symbol> nextSymbol = item.rule->rhs[item.currentLocation];
                 if(nextSymbol->isTerminal())
                 {
-                    unordered_map<shared_ptr<Symbol>, size_t> &theGotoTable = get<1>(canonicalSets[state]).gotoTable;
+                    unordered_map<gc_pointer<Symbol>, size_t> &theGotoTable = get<1>(canonicalSets[state]).gotoTable;
                     actionsRow[terminalSymbolMap[nextSymbol]].insert(ActionType(theGotoTable[nextSymbol]));
                 }
             }
@@ -1182,7 +1190,7 @@ int main(int argc, char **argv)
         }
         for(size_t symbolIndex = 0; symbolIndex < nonterminalSymbols.size(); symbolIndex++)
         {
-            unordered_map<shared_ptr<Symbol>, size_t> &theGotoTable = get<1>(canonicalSets[state]).gotoTable;
+            unordered_map<gc_pointer<Symbol>, size_t> &theGotoTable = get<1>(canonicalSets[state]).gotoTable;
             gotoRow[symbolIndex] = NoIndex;
             auto iter = theGotoTable.find(nonterminalSymbols[symbolIndex]);
             if(iter != theGotoTable.end())

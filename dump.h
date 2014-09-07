@@ -26,7 +26,7 @@ struct FormattingOptions
     }
 };
 
-inline wstring dumpSymbol(shared_ptr<Symbol> symbol, FormattingOptions formatting)
+inline wstring dumpSymbol(gc_pointer<Symbol> symbol, FormattingOptions formatting)
 {
     wstring retval;
     if(formatting.useEscapeSequences && symbol->isTerminal())
@@ -88,7 +88,7 @@ inline wstring dumpSymbols(const SymbolList &symbols, FormattingOptions formatti
     return retval;
 }
 
-inline wstring dumpRule(shared_ptr<Rule> rule, FormattingOptions formatting)
+inline wstring dumpRule(gc_pointer<Rule> rule, FormattingOptions formatting)
 {
     wstring retval;
     retval = dumpSymbol(rule->lhs, formatting);

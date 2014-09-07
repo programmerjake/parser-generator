@@ -71,7 +71,7 @@ bool getOptionBoolean(wstring optionName, bool optionDefault, const unordered_ma
 
 class CPlusPlusFileWriter : public FileWriter
 {
-    shared_ptr<ostream> stream2;
+    gc_pointer<ostream> stream2;
     ostream &os2;
     string valueTypeName, parseClassName, nullString, headerFileName, inputFileName, terminalSymbolPrefix;
     size_t indentAmount = 4;
@@ -81,14 +81,14 @@ class CPlusPlusFileWriter : public FileWriter
         return string(amount, ' ');
     }
     bool gotTerminalList = false, gotNonterminalList = false;
-    vector<shared_ptr<Symbol>> terminals;
-    vector<shared_ptr<Symbol>> nonterminals;
-    unordered_map<shared_ptr<Rule>, size_t> ruleNumbers;
-    vector<shared_ptr<Rule>> rules;
+    vector<gc_pointer<Symbol>> terminals;
+    vector<gc_pointer<Symbol>> nonterminals;
+    unordered_map<gc_pointer<Rule>, size_t> ruleNumbers;
+    vector<gc_pointer<Rule>> rules;
     string prologue;
     size_t stateCount;
     bool useCpp11 = false;
-    wstring getRuleName(shared_ptr<Rule> rule)
+    wstring getRuleName(gc_pointer<Rule> rule)
     {
         wostringstream ss;
         ss << L"reduce_to_";
@@ -216,7 +216,7 @@ class CPlusPlusFileWriter : public FileWriter
         os2 << indent(1) << "};\n";
     }
 public:
-    CPlusPlusFileWriter(shared_ptr<ostream> stream, shared_ptr<ostream> stream2, string headerFileName, const unordered_map<wstring, wstring> &options, string inputFileName)
+    CPlusPlusFileWriter(gc_pointer<ostream> stream, gc_pointer<ostream> stream2, string headerFileName, const unordered_map<wstring, wstring> &options, string inputFileName)
         : FileWriter(stream), stream2(stream2), os2(*stream2), valueTypeName(string_cast<string>(getOptionCppIdentifier(L"ValueType", L"ValueType", options))), parseClassName(string_cast<string>(getOptionCppIdentifier(L"ClassName", L"MyParser", options))), nullString("NULL"), headerFileName(headerFileName)
     {
         this->inputFileName = inputFileName;
@@ -266,14 +266,14 @@ public:
                 throw runtime_error("invalid code section name : " + string_cast<string>(std::get<0>(v)));
         }
     }
-    virtual void setTerminalList(vector<shared_ptr<Symbol>> terminals) override
+    virtual void setTerminalList(vector<gc_pointer<Symbol>> terminals) override
     {
         this->terminals = terminals;
         gotTerminalList = true;
         if(gotNonterminalList)
             onGotSymbols();
     }
-    virtual void setNonterminalList(vector<shared_ptr<Symbol>> nonterminals) override
+    virtual void setNonterminalList(vector<gc_pointer<Symbol>> nonterminals) override
     {
         this->nonterminals = nonterminals;
         gotNonterminalList = true;
@@ -283,7 +283,7 @@ public:
     virtual void setRules(const RuleSet &rules) override
     {
         this->rules.reserve(rules.size());
-        for(shared_ptr<Rule> rule : rules)
+        for(gc_pointer<Rule> rule : rules)
         {
             ruleNumbers[rule] = this->rules.size();
             this->rules.push_back(rule);
@@ -295,7 +295,7 @@ public:
         os2 << indent(1) << "static const ActionEntry actionTable[" << stateCount << "][" << terminals.size() << "];\n";
         os2 << indent(1) << "static const size_t gotoTable[" << stateCount << "][" << nonterminals.size() << "];\n";
         os2 << indent(1) << "static const " << valueTypeName << " terminalsTable[" << terminals.size() << "];\n";
-        for(shared_ptr<Rule> rule : rules)
+        for(gc_pointer<Rule> rule : rules)
         {
             os2 << indent(1) << valueTypeName << " " << string_cast<string>(getRuleName(rule)) << "(" << valueTypeName << " &peekToken);\n";
         }
@@ -313,7 +313,7 @@ public:
         os2 << indent(1) << "}\n";
         os2 << "};\n";
         os2 << "#endif\n";
-        for(shared_ptr<Rule> rule : rules)
+        for(gc_pointer<Rule> rule : rules)
         {
             os << valueTypeName << " " << parseClassName << "::" << string_cast<string>(getRuleName(rule)) << "(" << valueTypeName << " &peekToken)\n";
             os << "{\n";
@@ -378,14 +378,14 @@ public:
             enumPrefix += "ActionType::";
         os << indent(2) << "{" << enumPrefix << "Error, 0, " << nullString << ", 0},\n";
     }
-    virtual void writeReduceAction(shared_ptr<Rule> rule, size_t nonterminalIndex, size_t lookahead) override
+    virtual void writeReduceAction(gc_pointer<Rule> rule, size_t nonterminalIndex, size_t lookahead) override
     {
         string enumPrefix = parseClassName + "::";
         if(useCpp11)
             enumPrefix += "ActionType::";
         os << indent(2) << "{" << enumPrefix << "Reduce, " << nonterminalIndex << ", &" << parseClassName << "::" << string_cast<string>(getRuleName(rule)) << ", " << rule->rhs.size() << "},\n";
     }
-    virtual void writeAcceptAction(shared_ptr<Rule> rule, size_t nonterminalIndex, size_t lookahead) override
+    virtual void writeAcceptAction(gc_pointer<Rule> rule, size_t nonterminalIndex, size_t lookahead) override
     {
         string enumPrefix = parseClassName + "::";
         if(useCpp11)
@@ -482,10 +482,10 @@ FileWriter *makeFileWriter(wstring language, string inputFileName, unordered_map
             baseFileName.erase(lastPeriodPosition);
         headerName = baseFileName + ".h";
         headerName = string_cast<string>(getOption(L"HeaderFile", string_cast<wstring>(headerName), options));
-        shared_ptr<ostream> outputFile = make_shared<ofstream>(fileName);
+        gc_pointer<ostream> outputFile = make_gc_ptr<ofstream>(fileName);
         if(!*outputFile)
             throw runtime_error("can't open output source file '" + fileName + "'");
-        shared_ptr<ostream> headerFile = make_shared<ofstream>(headerName);
+        gc_pointer<ostream> headerFile = make_gc_ptr<ofstream>(headerName);
         if(!*headerFile)
             throw runtime_error("can't open output header file '" + headerName + "'");
         return new CPlusPlusFileWriter(outputFile, headerFile, getRelativeName(fileName, headerName), options, inputFileName);

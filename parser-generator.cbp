@@ -23,7 +23,8 @@
 				<Option compiler="gcc" />
 				<Option parameters="-v ../basic/basic.parser" />
 				<Compiler>
-					<Add option="-O2" />
+					<Add option="-O3" />
+					<Add option="-march=native" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -38,6 +39,7 @@
 		<Unit filename="dump.h" />
 		<Unit filename="file_writer.cpp" />
 		<Unit filename="file_writer.h" />
+		<Unit filename="gc.h" />
 		<Unit filename="generate.cpp" />
 		<Unit filename="generate.h" />
 		<Unit filename="item.h" />

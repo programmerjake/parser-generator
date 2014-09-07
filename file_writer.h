@@ -4,6 +4,7 @@
 #include <ostream>
 #include <vector>
 #include <memory>
+#include "gc.h"
 #include <cwchar>
 #include <string>
 #include <unordered_map>
@@ -17,10 +18,10 @@ class FileWriter
     FileWriter(const FileWriter &) = delete;
     void operator =(const FileWriter &) = delete;
 protected:
-    shared_ptr<ostream> stream;
+    gc_pointer<ostream> stream;
     ostream &os;
 public:
-    FileWriter(shared_ptr<ostream> stream)
+    FileWriter(gc_pointer<ostream> stream)
         : stream(stream), os(*stream)
     {
     }
@@ -30,8 +31,8 @@ public:
     virtual wstring getLanguage() const = 0;
     virtual void writePrologue(unordered_multimap<wstring, CodeSection> code) = 0;
     virtual void writeEpilogue(unordered_multimap<wstring, CodeSection> code) = 0;
-    virtual void setTerminalList(vector<shared_ptr<Symbol>> terminals) = 0;
-    virtual void setNonterminalList(vector<shared_ptr<Symbol>> nonterminals) = 0;
+    virtual void setTerminalList(vector<gc_pointer<Symbol>> terminals) = 0;
+    virtual void setNonterminalList(vector<gc_pointer<Symbol>> nonterminals) = 0;
     virtual void setRules(const RuleSet &rules) = 0;
     virtual void startActionTable(size_t stateCount) = 0;
     virtual void endActionTableAndStartGotoTable() = 0;
@@ -42,8 +43,8 @@ public:
     virtual void endGotoState() = 0;
     virtual void writeGoto(size_t nonterminalIndex, size_t newState) = 0;
     virtual void writeErrorAction(size_t lookahead) = 0;
-    virtual void writeReduceAction(shared_ptr<Rule> rule, size_t nonterminalIndex, size_t lookahead) = 0;
-    virtual void writeAcceptAction(shared_ptr<Rule> rule, size_t nonterminalIndex, size_t lookahead) = 0;
+    virtual void writeReduceAction(gc_pointer<Rule> rule, size_t nonterminalIndex, size_t lookahead) = 0;
+    virtual void writeAcceptAction(gc_pointer<Rule> rule, size_t nonterminalIndex, size_t lookahead) = 0;
     virtual void writeShiftAction(size_t newState, size_t lookahead) = 0;
 };
 
