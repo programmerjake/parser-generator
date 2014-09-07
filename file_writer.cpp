@@ -73,6 +73,7 @@ class CPlusPlusFileWriter : public FileWriter
 {
     gc_pointer<ostream> stream2;
     ostream &os2;
+    function<void()> stream2Closer;
     string valueTypeName, parseClassName, nullString, headerFileName, inputFileName, terminalSymbolPrefix;
     size_t indentAmount = 4;
     string indent(size_t amount)
@@ -216,8 +217,8 @@ class CPlusPlusFileWriter : public FileWriter
         os2 << indent(1) << "};\n";
     }
 public:
-    CPlusPlusFileWriter(gc_pointer<ostream> stream, gc_pointer<ostream> stream2, string headerFileName, const unordered_map<wstring, wstring> &options, string inputFileName)
-        : FileWriter(stream), stream2(stream2), os2(*stream2), valueTypeName(string_cast<string>(getOptionCppIdentifier(L"ValueType", L"ValueType", options))), parseClassName(string_cast<string>(getOptionCppIdentifier(L"ClassName", L"MyParser", options))), nullString("NULL"), headerFileName(headerFileName)
+    CPlusPlusFileWriter(gc_pointer<ostream> stream, function<void()> streamCloser, gc_pointer<ostream> stream2, function<void()> stream2Closer, string headerFileName, const unordered_map<wstring, wstring> &options, string inputFileName)
+        : FileWriter(stream, streamCloser), stream2(stream2), os2(*stream2), stream2Closer(stream2Closer), valueTypeName(string_cast<string>(getOptionCppIdentifier(L"ValueType", L"ValueType", options))), parseClassName(string_cast<string>(getOptionCppIdentifier(L"ClassName", L"MyParser", options))), nullString("NULL"), headerFileName(headerFileName)
     {
         this->inputFileName = inputFileName;
         if(getOptionBoolean(L"UseC++11", false, options))
@@ -399,6 +400,11 @@ public:
             enumPrefix += "ActionType::";
         os << indent(2) << "{" << enumPrefix << "Shift, " << newState << ", " << nullString << ", 0},\n";
     }
+    virtual void close() override
+    {
+        FileWriter::close();
+        stream2Closer();
+    }
 };
 
 vector<string> decomposePath(string path)
@@ -482,13 +488,13 @@ FileWriter *makeFileWriter(wstring language, string inputFileName, unordered_map
             baseFileName.erase(lastPeriodPosition);
         headerName = baseFileName + ".h";
         headerName = string_cast<string>(getOption(L"HeaderFile", string_cast<wstring>(headerName), options));
-        gc_pointer<ostream> outputFile = make_gc_ptr<ofstream>(fileName);
+        gc_pointer<ofstream> outputFile = make_gc_ptr<ofstream>(fileName);
         if(!*outputFile)
             throw runtime_error("can't open output source file '" + fileName + "'");
-        gc_pointer<ostream> headerFile = make_gc_ptr<ofstream>(headerName);
+        gc_pointer<ofstream> headerFile = make_gc_ptr<ofstream>(headerName);
         if(!*headerFile)
             throw runtime_error("can't open output header file '" + headerName + "'");
-        return new CPlusPlusFileWriter(outputFile, headerFile, getRelativeName(fileName, headerName), options, inputFileName);
+        return new CPlusPlusFileWriter(outputFile, [=](){outputFile->close();}, headerFile, [=](){headerFile->close();}, getRelativeName(fileName, headerName), options, inputFileName);
     }
     throw runtime_error("unknown output language");
 }

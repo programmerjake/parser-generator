@@ -23,7 +23,7 @@
 				<Option compiler="gcc" />
 				<Option parameters="-v ../basic/basic.parser" />
 				<Compiler>
-					<Add option="-O3" />
+					<Add option="-O2" />
 					<Add option="-march=native" />
 				</Compiler>
 				<Linker>

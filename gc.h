@@ -3,6 +3,7 @@
 
 #include <cstddef> // for std::nullptr_t
 #include <functional> // for std::hash
+#include <vector>
 
 template <typename T>
 class enable_gc_ptr_from_this;
