@@ -7,25 +7,25 @@
 
 struct Location
 {
-    wstring fileName;
+    std::wstring fileName;
     size_t line, column;
-    Location(wstring fileName, size_t line, size_t column)
+    Location(std::wstring fileName, size_t line, size_t column)
         : fileName(fileName), line(line), column(column)
     {
     }
-    Location(wstring fileName)
+    Location(std::wstring fileName)
         : fileName(fileName), line(1), column(1)
     {
     }
-    explicit operator wstring() const
+    explicit operator std::wstring() const
     {
-        wostringstream ss;
+        std::wostringstream ss;
         ss << fileName << L":" << line << ":" << column;
         return ss.str();
     }
-    wstring getCLineDirective() const
+    std::wstring getCLineDirective() const
     {
-        wostringstream ss;
+        std::wostringstream ss;
         ss << L"#line " << line << L" \"";
         for(wchar_t ch : fileName)
         {
@@ -49,7 +49,7 @@ struct Location
 struct CodeSection
 {
     Location location;
-    wstring code;
+    std::wstring code;
     bool empty() const
     {
         return code.empty();
@@ -58,7 +58,7 @@ struct CodeSection
         : location(L"")
     {
     }
-    CodeSection(Location location, wstring code)
+    CodeSection(Location location, std::wstring code)
         : location(location), code(code)
     {
     }

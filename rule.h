@@ -24,6 +24,15 @@ struct Rule final
     Rule(gc_pointer<NonterminalSymbol> lhs, SymbolList rhs, CodeSection code = CodeSection())
         : lhs(lhs), rhs(rhs), code(code)
     {
+        lhs->lhsUseCount++;
+        for(gc_pointer<Symbol> symbol : rhs)
+        {
+            if(symbol->isTerminal())
+                continue;
+            gc_pointer<NonterminalSymbol> s = dynamic_pointer_cast<NonterminalSymbol>(symbol);
+            assert(s != nullptr);
+            s->rhsUseCount++;
+        }
     }
     wstring substituteCPlusPlusCode(function<wstring(int)> getArgString, wstring destString) const
     {

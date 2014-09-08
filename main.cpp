@@ -791,12 +791,12 @@ void parsePrologueSection(Tokenizer &tokenizer, unordered_multimap<wstring, Code
     }
 }
 
-gc_pointer<Symbol> findOrMakeSymbol(wstring name, SymbolSet &symbols, unordered_map<wstring, gc_pointer<Symbol>> &symbolsMap)
+gc_pointer<Symbol> findOrMakeSymbol(Token token, SymbolSet &symbols, unordered_map<wstring, gc_pointer<Symbol>> &symbolsMap)
 {
-    gc_pointer<Symbol> &retval = symbolsMap[name];
+    gc_pointer<Symbol> &retval = symbolsMap[token.value];
     if(retval == nullptr)
     {
-        retval = make_gc_ptr<NonterminalSymbol>(name);
+        retval = make_gc_ptr<NonterminalSymbol>(token.location, token.value);
         symbols.insert(retval);
     }
     return retval;
@@ -813,7 +813,7 @@ void parseRule(Tokenizer &tokenizer, RuleSet &rules, SymbolSet &symbols, unorder
     Token &token = tokenizer.token;
     if(token.type != TokenType::Identifier)
         throw ParseError(token.location, L"expected an identifier");
-    gc_pointer<Symbol> symbol = findOrMakeSymbol(token.value, symbols, symbolsMap);
+    gc_pointer<Symbol> symbol = findOrMakeSymbol(token, symbols, symbolsMap);
     if(symbol->isTerminal())
         throw ParseError(token.location, L"can't use terminal symbol in left-hand side of rule");
     gc_pointer<NonterminalSymbol> lhs = dynamic_pointer_cast<NonterminalSymbol>(symbol);
@@ -853,7 +853,7 @@ void parseRule(Tokenizer &tokenizer, RuleSet &rules, SymbolSet &symbols, unorder
         case TokenType::Identifier:
             if(hasCode)
                 throw ParseError(token.location, L"expected | or ;");
-            symbol = findOrMakeSymbol(token.value, symbols, symbolsMap);
+            symbol = findOrMakeSymbol(token, symbols, symbolsMap);
             symbols.insert(symbol);
             rhs.push_back(symbol);
             tokenizer.nextToken();
@@ -1033,6 +1033,7 @@ int main(int argc, char **argv)
     RuleSet rules;
     gc_pointer<TerminalSymbol> eofSymbol = TerminalSymbol::make(L"EOF");
     symbols.insert(eofSymbol);
+    symbolsMap[eofSymbol->name] = eofSymbol;
     gc_pointer<NonterminalSymbol> startSymbol;
     unordered_multimap<wstring, CodeSection> prologueCode, epilogueCode;
     unordered_map<wstring, wstring> outputOptions;
@@ -1050,9 +1051,27 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    startSymbol->rhsUseCount++; // the start symbol is always used
+
     if(verbose)
     {
         cout << "parsed input file." << endl;
+    }
+
+    for(gc_pointer<Symbol> symbol : symbols)
+    {
+        if(symbol->isTerminal())
+            continue;
+        gc_pointer<NonterminalSymbol> s = dynamic_pointer_cast<NonterminalSymbol>(symbol);
+        assert(s != nullptr);
+        if(s->lhsUseCount <= 0)
+        {
+            cout << string_cast<string>(static_cast<wstring>(s->location)) << ": warning: " << string_cast<string>(s->name) << " not defined" << endl;
+        }
+        if(s->rhsUseCount <= 0)
+        {
+            cout << string_cast<string>(static_cast<wstring>(s->location)) << ": warning: " << string_cast<string>(s->name) << " not used" << endl;
+        }
     }
 
     calculateFirstSets(symbols, rules);
@@ -1088,7 +1107,7 @@ int main(int argc, char **argv)
             if(currentTime - lastTime >= chrono::milliseconds(500))
             {
                 lastTime = currentTime;
-                cout << "processing canonical set " << (i + 1) << " out of " << canonicalSets.size() << "\x1b[K\r" << flush;
+                cout << "processing canonical set " << (i + 1) << " out of " << canonicalSets.size() << endl;
             }
         }
 
@@ -1111,7 +1130,7 @@ int main(int argc, char **argv)
 
     if(verbose)
     {
-        cout << "processed " << canonicalSets.size() << " canonical sets.\x1b[K" << endl;
+        cout << "processed " << canonicalSets.size() << " canonical sets." << endl;
     }
 
     vector<gc_pointer<Symbol>> terminalSymbols;
@@ -1180,7 +1199,7 @@ int main(int argc, char **argv)
                 actionsRow[symbolIndex].insert(ActionType());
             else if(actionsRow[symbolIndex].size() > 1)
             {
-                cerr << inputFile << ": error: conflict on lookahead of " << string_cast<string>(dumpSymbol(terminalSymbols[symbolIndex], FormattingOptions())) << " : \n";
+                cerr << inputFile << ": error: conflict on lookahead of " << string_cast<string>(terminalSymbols[symbolIndex]->name) << " : \n";
                 for(ActionType action : actionsRow[symbolIndex])
                 {
                     cerr << "    " << string_cast<string>(static_cast<wstring>(action)) << "\n";

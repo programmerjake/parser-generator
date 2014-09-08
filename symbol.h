@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include "gc.h"
+#include "location.h"
 
 using namespace std;
 
@@ -74,8 +75,8 @@ public:
 class NonterminalSymbol final : public Symbol
 {
 public:
-    NonterminalSymbol(const wstring &name)
-        : Symbol(name)
+    NonterminalSymbol(Location location, const wstring &name)
+        : Symbol(name), location(location)
     {
     }
     virtual bool isTerminal() const override
@@ -83,6 +84,9 @@ public:
         return false;
     }
     TerminalSet firstSet;
+    size_t lhsUseCount = 0;
+    size_t rhsUseCount = 0;
+    Location location;
 };
 
 typedef vector<gc_pointer<Symbol>> SymbolList;
