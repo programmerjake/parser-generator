@@ -98,6 +98,7 @@ struct ValueType
 
 
 
+#line 102 "test.parser.h"
 #include <vector>
 #include <string>
 #include <stdexcept>
@@ -149,11 +150,11 @@ private:
     ValueType reduce_to_factor_4(ValueType &peekToken);
     ValueType reduce_to_start_5(ValueType &peekToken);
     ValueType reduce_to_start_6(ValueType &peekToken);
-    ValueType reduce_to_expression_7(ValueType &peekToken);
-    ValueType reduce_to_expression_8(ValueType &peekToken);
+    ValueType reduce_to_add_sub_expression_7(ValueType &peekToken);
+    ValueType reduce_to_add_sub_expression_8(ValueType &peekToken);
     ValueType reduce_to_add_sub_expression_9(ValueType &peekToken);
-    ValueType reduce_to_add_sub_expression_10(ValueType &peekToken);
-    ValueType reduce_to_add_sub_expression_11(ValueType &peekToken);
+    ValueType reduce_to_expression_10(ValueType &peekToken);
+    ValueType reduce_to_expression_11(ValueType &peekToken);
     ValueType reduce_to_mul_div_expression_12(ValueType &peekToken);
     ValueType reduce_to_mul_div_expression_13(ValueType &peekToken);
     ValueType reduce_to_mul_div_expression_14(ValueType &peekToken);

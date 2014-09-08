@@ -1239,7 +1239,6 @@ int main(int argc, char **argv)
         }
         writer->endGotoTable();
         writer->writeEpilogue(epilogueCode);
-        writer->close();
         delete writer;
     }
     catch(exception &e)

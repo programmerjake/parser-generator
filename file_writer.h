@@ -17,13 +17,8 @@ class FileWriter
 {
     FileWriter(const FileWriter &) = delete;
     void operator =(const FileWriter &) = delete;
-protected:
-    gc_pointer<ostream> stream;
-    ostream &os;
-    function<void()> streamCloser;
 public:
-    FileWriter(gc_pointer<ostream> stream, function<void()> streamCloser)
-        : stream(stream), os(*stream), streamCloser(streamCloser)
+    FileWriter()
     {
     }
     virtual ~FileWriter()
@@ -47,10 +42,6 @@ public:
     virtual void writeReduceAction(gc_pointer<Rule> rule, size_t nonterminalIndex, size_t lookahead) = 0;
     virtual void writeAcceptAction(gc_pointer<Rule> rule, size_t nonterminalIndex, size_t lookahead) = 0;
     virtual void writeShiftAction(size_t newState, size_t lookahead) = 0;
-    virtual void close()
-    {
-        streamCloser();
-    }
 };
 
 FileWriter *makeFileWriter(wstring language, string inputFileName, unordered_map<wstring, wstring> options = unordered_map<wstring, wstring>());

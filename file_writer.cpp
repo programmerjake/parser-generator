@@ -69,12 +69,85 @@ bool getOptionBoolean(wstring optionName, bool optionDefault, const unordered_ma
     throw runtime_error("invalid value for %option " + string_cast<string>(optionName) + " : use true, false, yes, no, on, or off");
 }
 
+class ofilter_streambuf : public streambuf
+{
+    unique_ptr<ostream> output;
+public:
+    explicit ofilter_streambuf(unique_ptr<ostream> output)
+        : output(std::move(output))
+    {
+    }
+protected:
+    virtual int filter(int ch) = 0;
+    virtual int overflow(int ch = EOF) override
+    {
+        if(ch == EOF)
+        {
+            return ch;
+        }
+        int v = filter(ch);
+        while(v != EOF)
+        {
+            output->put(v);
+            v = filter(EOF);
+        }
+        if(*output)
+            return ch;
+        return EOF;
+    }
+    virtual int sync() override
+    {
+        output->flush();
+        if(*output)
+            return 0;
+        return -1;
+    }
+};
+
+class oline_counting_streambuf : public ofilter_streambuf
+{
+    size_t currentLine = 1;
+public:
+    oline_counting_streambuf(unique_ptr<ostream> output)
+        : ofilter_streambuf(std::move(output))
+    {
+    }
+    size_t getLineNumber() const
+    {
+        return currentLine;
+    }
+protected:
+    virtual int filter(int ch) override
+    {
+        if(ch == '\n')
+            currentLine++;
+        return ch;
+    }
+};
+
+class oline_counting_stream : public ostream
+{
+    unique_ptr<oline_counting_streambuf> sb;
+    explicit oline_counting_stream(unique_ptr<oline_counting_streambuf> sb)
+        : ostream(sb.get())
+    {
+        this->sb = std::move(sb);
+    }
+public:
+    explicit oline_counting_stream(unique_ptr<ostream> output)
+        : oline_counting_stream(unique_ptr<oline_counting_streambuf>(new oline_counting_streambuf(std::move(output))))
+    {
+    }
+    size_t getLineNumber() const
+    {
+        return sb->getLineNumber();
+    }
+};
+
 class CPlusPlusFileWriter : public FileWriter
 {
-    gc_pointer<ostream> stream2;
-    ostream &os2;
-    function<void()> stream2Closer;
-    string valueTypeName, parseClassName, nullString, headerFileName, inputFileName, terminalSymbolPrefix;
+    oline_counting_stream os, os2;
+    string valueTypeName, parseClassName, nullString, sourceFileName, headerFileName, inputFileName, terminalSymbolPrefix;
     size_t indentAmount = 4;
     string indent(size_t amount)
     {
@@ -89,6 +162,101 @@ class CPlusPlusFileWriter : public FileWriter
     string prologue;
     size_t stateCount;
     bool useCpp11 = false;
+    static wstring getCharacterLiteral(unsigned value)
+    {
+        wostringstream ss;
+        if(value >= 0x10000)
+        {
+            ss << L"\\U";
+            ss.fill(L'0');
+            ss.width(8);
+            ss << hex << value;
+        }
+        else if(value >= 0x80)
+        {
+            ss << L"\\u";
+            ss.fill(L'0');
+            ss.width(4);
+            ss << hex << value;
+        }
+        else if(value == 0x7F)
+        {
+            ss << L"\\x7F";
+        }
+        else if(value < 0x20)
+        {
+            switch(value)
+            {
+            case '\a':
+                ss << L"\\a";
+                break;
+            case '\b':
+                ss << L"\\b";
+                break;
+            case '\f':
+                ss << L"\\f";
+                break;
+            case '\n':
+                ss << L"\\n";
+                break;
+            case '\r':
+                ss << L"\\r";
+                break;
+            case '\t':
+                ss << L"\\t";
+                break;
+            case '\v':
+                ss << L"\\v";
+                break;
+            default:
+                ss << L"\\x";
+                ss.fill(L'0');
+                ss.width(2);
+                ss << hex << value;
+                break;
+            }
+        }
+        else
+        {
+            switch(value)
+            {
+            case '\"':
+            case '\'':
+            case '\\':
+                ss << L"\\" << (wchar_t)value;
+                break;
+            default:
+                ss << (wchar_t)value;
+            }
+        }
+        return ss.str();
+    }
+    static wstring escapeString(wstring str)
+    {
+        wstring retval = L"";
+        for(size_t i = 0; i < str.size(); i++)
+        {
+            unsigned value = str[i];
+            if(value >= 0xD800U && value <= 0xDBFFU && i + 1 < str.size())
+            {
+                unsigned nextValue = str[i + 1];
+                if(nextValue >= 0xDC00U && nextValue <= 0xDFFFU)
+                {
+                    i++;
+                    value -= 0xD800U;
+                    nextValue -= 0xDC00U;
+                    value <<= 10;
+                    value += nextValue;
+                }
+            }
+            retval += getCharacterLiteral(value);
+        }
+        return retval;
+    }
+    static string escapeString(string str)
+    {
+        return string_cast<string>(escapeString(string_cast<wstring>(str)));
+    }
     wstring getRuleName(gc_pointer<Rule> rule)
     {
         wostringstream ss;
@@ -115,6 +283,11 @@ class CPlusPlusFileWriter : public FileWriter
                 ss << '_';
         }
         return ss.str();
+    }
+    static void writeLineDirective(string fileName, oline_counting_stream &os)
+    {
+        size_t line = os.getLineNumber() + 1;
+        os << "#line " << line << " \"" << escapeString(fileName) << "\"\n";
     }
     void writeParseFunctions()
     {
@@ -169,11 +342,12 @@ class CPlusPlusFileWriter : public FileWriter
     void onGotSymbols()
     {
         os << "// This is a automatically generated file : DO NOT MODIFY\n// This file is generated from '" << inputFileName << "'\n";
-        os << "#include \"" << headerFileName << "\"\n";
+        os << "#include \"" << escapeString(headerFileName) << "\"\n";
         os2 << "// This is a automatically generated file : DO NOT MODIFY\n// This file is generated from '" << inputFileName << "'\n";
         os2 << "#ifndef " << getHeaderGuardName() << "\n";
         os2 << "#define " << getHeaderGuardName() << "\n";
         os2 << prologue << "\n";
+        writeLineDirective(headerFileName, os2);
         os2 << "#include <vector>\n";
         os2 << "#include <string>\n";
         os2 << "#include <stdexcept>\n";
@@ -217,8 +391,8 @@ class CPlusPlusFileWriter : public FileWriter
         os2 << indent(1) << "};\n";
     }
 public:
-    CPlusPlusFileWriter(gc_pointer<ostream> stream, function<void()> streamCloser, gc_pointer<ostream> stream2, function<void()> stream2Closer, string headerFileName, const unordered_map<wstring, wstring> &options, string inputFileName)
-        : FileWriter(stream, streamCloser), stream2(stream2), os2(*stream2), stream2Closer(stream2Closer), valueTypeName(string_cast<string>(getOptionCppIdentifier(L"ValueType", L"ValueType", options))), parseClassName(string_cast<string>(getOptionCppIdentifier(L"ClassName", L"MyParser", options))), nullString("NULL"), headerFileName(headerFileName)
+    CPlusPlusFileWriter(unique_ptr<ostream> stream, unique_ptr<ostream> stream2, string sourceFileName, string headerFileName, const unordered_map<wstring, wstring> &options, string inputFileName)
+        : os(std::move(stream)), os2(std::move(stream2)), valueTypeName(string_cast<string>(getOptionCppIdentifier(L"ValueType", L"ValueType", options))), parseClassName(string_cast<string>(getOptionCppIdentifier(L"ClassName", L"MyParser", options))), nullString("NULL"), sourceFileName(sourceFileName), headerFileName(headerFileName)
     {
         this->inputFileName = inputFileName;
         if(getOptionBoolean(L"UseC++11", false, options))
@@ -325,6 +499,7 @@ public:
                 ss << L"(this->theStack[this->theStack.size() - " << (rule->rhs.size() - index + 1) << "].value)";
                 return ss.str();
             }, L"dollar_dollar")) << "\n";
+            writeLineDirective(sourceFileName, os);
             os << indent(1) << "return dollar_dollar;\n";
             os << "}\n";
         }
@@ -399,11 +574,6 @@ public:
         if(useCpp11)
             enumPrefix += "ActionType::";
         os << indent(2) << "{" << enumPrefix << "Shift, " << newState << ", " << nullString << ", 0},\n";
-    }
-    virtual void close() override
-    {
-        FileWriter::close();
-        stream2Closer();
     }
 };
 
@@ -488,13 +658,13 @@ FileWriter *makeFileWriter(wstring language, string inputFileName, unordered_map
             baseFileName.erase(lastPeriodPosition);
         headerName = baseFileName + ".h";
         headerName = string_cast<string>(getOption(L"HeaderFile", string_cast<wstring>(headerName), options));
-        gc_pointer<ofstream> outputFile = make_gc_ptr<ofstream>(fileName);
+        unique_ptr<ofstream> outputFile = unique_ptr<ofstream>(new ofstream(fileName));
         if(!*outputFile)
             throw runtime_error("can't open output source file '" + fileName + "'");
-        gc_pointer<ofstream> headerFile = make_gc_ptr<ofstream>(headerName);
+        unique_ptr<ofstream> headerFile = unique_ptr<ofstream>(new ofstream(headerName));
         if(!*headerFile)
             throw runtime_error("can't open output header file '" + headerName + "'");
-        return new CPlusPlusFileWriter(outputFile, [=](){outputFile->close();}, headerFile, [=](){headerFile->close();}, getRelativeName(fileName, headerName), options, inputFileName);
+        return new CPlusPlusFileWriter(std::move(outputFile), std::move(headerFile), getRelativeName(fileName, fileName), getRelativeName(fileName, headerName), options, inputFileName);
     }
     throw runtime_error("unknown output language");
 }
