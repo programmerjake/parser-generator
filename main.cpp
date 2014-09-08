@@ -207,7 +207,7 @@ struct ParseError : public runtime_error
     {
     }
     ParseError(Location location, wstring msg)
-        : ParseError(static_cast<wstring>(location) + L" : " + msg)
+        : ParseError(static_cast<wstring>(location) + L": error: " + msg)
     {
         this->location = location;
     }
@@ -1046,7 +1046,7 @@ int main(int argc, char **argv)
     }
     catch(exception &e)
     {
-        cerr << "Error : " << e.what() << endl;
+        cerr << e.what() << endl;
         return 1;
     }
 
